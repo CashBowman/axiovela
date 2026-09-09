@@ -78,7 +78,7 @@ jobs:
         run: npm run desktop:recovery:smoke
       - name: Retain candidate downloads with their workflow result
         if: always() && steps.package.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Axiovela-desktop-${{ matrix.os }}
           path: out/make/
@@ -86,7 +86,7 @@ jobs:
           retention-days: 14
       - name: Retain Mac trust diagnostics even on failure
         if: always() && runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Mac-trust-${{ matrix.os }}
           path: |
@@ -123,7 +123,7 @@ jobs:
         env:
           HYPOTERA_TEST_LATEX: '1'
         run: node scripts/desktop-dmg-smoke.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: Mac-trust-${{ matrix.os }}
