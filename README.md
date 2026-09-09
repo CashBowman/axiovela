@@ -4,7 +4,7 @@
 
 <p align="center"><strong>The AI research workbench.</strong><br />Turn a question into experiments, measured results, and a manuscript.</p>
 
-<p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.0">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="docs/releases/0.2.0.md">Release notes</a></p>
+<p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.1">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.1">Release notes</a></p>
 
 ![Axiovela Results: recorded measurements, evidence summary, and experiment figure](docs/assets/axiovela-results.jpg)
 
@@ -30,31 +30,30 @@ Use Codex, Claude Code, Gemini CLI, OpenCode, Pi, or a supported API connection.
 
 Axiovela runs in its own window on **Linux, Windows, and macOS**. The desktop app includes its runtime; no Git, Node, npm, or GitHub account is needed for the example and basic project management.
 
-**Download Axiovela 0.2.0**
+**Download Axiovela 0.2.1**
 
 **Windows**
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/Axiovela-0.2.0.Setup.exe"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/windows.png" alt="Download Windows: Intel / AMD · 64-bit" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.1/Axiovela-0.2.1-win32-x64-Setup.exe"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/windows.png" alt="Download Windows: Intel / AMD · 64-bit" width="320" height="88" /></a>
 
 **macOS**
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/Axiovela-0.2.0-darwin-arm64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-arm.png" alt="Download Mac · Apple Silicon: M-series chips" width="320" height="88" /></a>
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/Axiovela-0.2.0-darwin-x64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-intel.png" alt="Download Mac · Intel: Intel processors" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.1/Axiovela-0.2.1-darwin-arm64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-arm.png" alt="Download Mac · Apple Silicon: M-series chips" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.1/Axiovela-0.2.1-darwin-x64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-intel.png" alt="Download Mac · Intel: Intel processors" width="320" height="88" /></a>
 
 **Linux**
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/axiovela_0.2.0_amd64.deb"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-deb.png" alt="Download Ubuntu / Debian: Linux · 64-bit · .deb" width="320" height="88" /></a>
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/axiovela-0.2.0-1.x86_64.rpm"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-rpm.png" alt="Download Fedora / RPM: Linux · 64-bit · .rpm" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.1/Axiovela-0.2.1-linux-x64.zip"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-zip.png" alt="Download Linux: 64-bit · ZIP archive" width="320" height="88" /></a>
 
-[Help choosing a download, portable ZIPs, and release notes](https://github.com/CashBowman/axiovela/releases/tag/v0.2.0)
+[Help choosing a download, portable ZIPs, and release notes](https://github.com/CashBowman/axiovela/releases/tag/v0.2.1)
 
 Existing projects and settings remain compatible. Open **Help → Try the example study**, or choose **Project** and connect your provider below the chat composer.
 
-[Installation and first session](docs/quick-start.md) · [Platform validation](docs/releases/0.2.0.md) · [Mac installation](docs/mac-installation.md)
+[Installation and first session](docs/quick-start.md) · [Platform validation](https://github.com/CashBowman/axiovela/releases/tag/v0.2.1) · [Mac installation](docs/mac-installation.md)
 
 ## Develop on your Mac or Windows computer
 
-The `main` branch includes the 0.2.0 release: project tabs, improved chat, on-demand evidence context, provider setup buttons, and source/PDF exports. Three selectable [research profiles](docs/research-profiles.md) preserve domain-specific research instructions.
+The `main` branch includes the 0.2.1 release: project tabs, improved chat, on-demand evidence context, provider setup buttons, and source/PDF exports. Three selectable [research profiles](docs/research-profiles.md) preserve domain-specific research instructions.
 
 Clone this repository and follow [Development setup](docs/development-setup.md) for the exact Mac, Windows, and Linux commands, local packaging, and acceptance checks. GitHub desktop and multi-OS builds run only when manually requested. See the current release record for device reports and remaining acceptance checks.
 
