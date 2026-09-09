@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+  <title id="title">Axiovela — from hypothesis to manuscript</title>
+  <desc id="desc">A local AI research workspace connecting hypotheses, reproducible experiments, evidence, and manuscripts. Your code, data, and research records stay in your project.</desc>
+  <!-- Colors mirror src/style.css: background, surface, ink, blue, gold, gold-text. -->
+  <rect width="1280" height="640" fill="#e7edf2"/>
+  <rect x="48" y="48" width="1184" height="544" rx="27" fill="#edf2f7" fill-opacity="0.78" stroke="#465b6b" stroke-opacity="0.28"/>
+  <!-- Current compass is embedded by scripts/render-social-preview.mjs. -->
+  <image x="1050" y="96" width="110" height="110" href="../../public/workbench-mark.png"/>
+
+  <g font-family="DejaVu Sans, sans-serif">
+    <text x="100" y="135" fill="#735c2e" font-size="18" letter-spacing="3">LOCAL AI RESEARCH WORKSPACE</text>
+    <text x="96" y="220" fill="#203040" font-size="68" font-weight="700">Axiovela</text>
+    <text x="100" y="270" fill="#4d7898" font-size="26">The AI research workbench.</text>
+    <g fill="#fbfcfd" fill-opacity="0.78" stroke="#465b6b" stroke-opacity="0.28" stroke-width="1">
+      <rect x="100" y="325" width="235" height="124" rx="12"/>
+      <rect x="382" y="325" width="235" height="124" rx="12"/>
+      <rect x="664" y="325" width="235" height="124" rx="12"/>
+      <rect x="946" y="325" width="235" height="124" rx="12"/>
+    </g>
+    <g fill="#735c2e" font-size="16">
+      <text x="121" y="356">01 / ASK</text><text x="403" y="356">02 / RUN</text><text x="685" y="356">03 / ANALYZE</text><text x="967" y="356">04 / WRITE</text>
+    </g>
+    <g fill="#203040" font-size="25" font-weight="700">
+      <text x="121" y="393">Hypothesis</text><text x="403" y="393">Experiment</text><text x="685" y="393">Evidence</text><text x="967" y="393">Manuscript</text>
+    </g>
+    <g fill="#4d7898" font-size="15">
+      <text x="121" y="424">Question + baseline</text><text x="403" y="424">Code + recorded runs</text><text x="685" y="424">Metrics + figures</text><text x="967" y="424">Citations + exports</text>
+    </g>
+    <g fill="none" stroke="#735c2e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M348 386h21m-7-7 7 7-7 7"/><path d="M630 386h21m-7-7 7 7-7 7"/><path d="M912 386h21m-7-7 7 7-7 7"/>
+    </g>
+    <path d="M100 488h1080" stroke="#caa760" stroke-opacity="0.45"/>
+    <text x="100" y="531" fill="#203040" font-size="21">Your files. Your models. Your scientific judgment.</text>
+  </g>
+</svg>

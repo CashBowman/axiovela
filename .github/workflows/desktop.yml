@@ -1,0 +1,131 @@
+name: Desktop release
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Platform to build (all for a release)
+        type: choice
+        default: macos-15
+        options: [all, ubuntu-latest, windows-latest, macos-15, macos-15-intel]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.runner && inputs.runner != 'all' && format('["{0}"]', inputs.runner) || '["ubuntu-latest","windows-latest","macos-15","macos-15-intel"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Linux packaging tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fakeroot rpm xvfb
+      - run: npm ci
+      - run: npm run desktop:test
+      - run: npm run desktop:make
+        id: package
+      - name: Install the Linux DEB as an end user would
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y ./out/make/deb/x64/*.deb
+      - name: Test the packaged Linux application
+        if: runner.os == 'Linux'
+        env:
+          HYPOTERA_TEST_LATEX: '1'
+          HYPOTERA_TEST_INSTALLED_ROOT: /usr/lib/axiovela
+        run: xvfb-run -a npm run desktop:smoke -- --packaged
+      - name: Test the packaged Windows application
+        if: runner.os == 'Windows'
+        env:
+          HYPOTERA_TEST_LATEX: '1'
+          DEBUG: pw:browser
+        run: npm run desktop:smoke -- --packaged
+      - name: Install and test the actual macOS DMG
+        if: runner.os == 'macOS'
+        env:
+          HYPOTERA_TEST_LATEX: '1'
+          DEBUG: pw:browser
+        run: node scripts/desktop-dmg-smoke.mjs
+      - name: Test chat, project tabs, setup boundaries, and PDF export (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run beta:feedback:smoke
+      - name: Test chat, project tabs, setup boundaries, and PDF export (Mac/Windows)
+        if: runner.os != 'Linux'
+        run: npm run beta:feedback:smoke
+      - name: Test recovery (Linux)
+        if: runner.os == 'Linux'
+        env:
+          AXIOVELA_TEST_INSTALLED_ROOT: /usr/lib/axiovela
+        run: xvfb-run -a npm run desktop:recovery:smoke
+      # macOS recovery is already exercised inside desktop-dmg-smoke, which
+      # intentionally removes the original build directory before testing.
+      - name: Test recovery (Windows)
+        if: runner.os == 'Windows'
+        run: npm run desktop:recovery:smoke
+      - name: Retain candidate downloads with their workflow result
+        if: always() && steps.package.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Axiovela-desktop-${{ matrix.os }}
+          path: out/make/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain Mac trust diagnostics even on failure
+        if: always() && runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Mac-trust-${{ matrix.os }}
+          path: |
+            out/diagnostics/
+            out/make/MAC-TRUST-*.json
+          if-no-files-found: warn
+  tahoe:
+    needs: desktop
+    if: always() && !cancelled() && inputs.runner == 'all'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-26
+            artifact: Axiovela-desktop-macos-15
+          - os: macos-26-intel
+            artifact: Axiovela-desktop-macos-15-intel
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: out/make
+      - name: Test identical release DMG on Tahoe
+        env:
+          HYPOTERA_TEST_LATEX: '1'
+        run: node scripts/desktop-dmg-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Mac-trust-${{ matrix.os }}
+          path: out/make/MAC-TRUST-*.json
+          if-no-files-found: warn

@@ -1,0 +1,55 @@
+node_modules
+dist/
+out/
+desktop/third-party-licenses/
+.lavish/
+ml-theory-workbench-project/
+.workbench-tools/
+.env
+.env.*
+.DS_Store
+
+# Local authentication and tool state
+.codex/
+.claude/
+.gemini/
+.pi/
+providers.json
+.aws/
+.ssh/
+.npmrc
+.netrc
+.azure/
+.kube/
+*.pem
+*.key
+*.p12
+*.pfx
+auth.json
+credentials.json
+
+# Personal research outputs accidentally created in this checkout
+/assistant/
+/runs/
+/artifacts/
+/exports/
+/writeups/
+/datasets/
+/research/
+/mlruns/
+/wandb/
+/config/
+/prompts/
+/workflows/
+/references.bib
+/workbench.project.json
+__pycache__/
+*.pyc
+.venv/
+Thumbs.db
+
+# Verified platform tools are downloaded during desktop packaging.
+desktop/tools/
+
+# Private handoff notes and isolated development profiles; never force-add.
+/.local/

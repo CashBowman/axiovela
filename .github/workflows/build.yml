@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Platform to test (all runs three jobs)
+        type: choice
+        default: ubuntu-latest
+        options: [ubuntu-latest, windows-latest, macos-latest, all]
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.runner != 'all' && format('["{0}"]', inputs.runner) || '["ubuntu-latest","windows-latest","macos-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run install:smoke
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true

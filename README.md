@@ -1,0 +1,66 @@
+<p align="center"><img src="public/workbench-mark.png" width="72" height="72" alt="Axiovela mathematical compass" /></p>
+
+<h1 align="center">Axiovela</h1>
+
+<p align="center"><strong>The AI research workbench.</strong><br />Turn a question into experiments, measured results, and a manuscript.</p>
+
+<p align="center"><a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="docs/releases/0.2.0.md">Release notes</a></p>
+
+![Axiovela Results: recorded measurements, evidence summary, and experiment figure](docs/assets/axiovela-results.jpg)
+
+*The included synthetic regression study. The displayed measurements come from its reproducible experiment, with no AI account needed to run the example.*
+
+
+Axiovela keeps your code, data, figures, citations, and writing together in ordinary project files on your computer. Connect your AI provider, guide the work, and review the evidence at each step.
+
+## From question to manuscript
+
+1. **Ask.** Define the question, hypothesis, and baseline with your assistant.
+2. **Experiment.** Write and run code, recording methods, parameters, logs, and results.
+3. **Evaluate.** Inspect measured outcomes, compare figures, and document limitations.
+4. **Write.** Build a Markdown or LaTeX manuscript with linked figures and citations.
+
+Use Codex, Claude Code, Gemini CLI, OpenCode, Pi, or a supported API connection. Each research assistant has its own model and conversation settings. Experimental Pi + Herdr Agentic mode can delegate independent work to bounded workers. [Connections and access modes →](docs/model-tools.md)
+
+## Start with the desktop app
+
+Axiovela runs in its own window on **Linux, Windows, and macOS**. The desktop app includes its runtime; no Git, Node, npm, or GitHub account is needed for the example and basic project management.
+
+**Current release: 0.2.0.** Download the matching installer and SHA-256 manifest from the [0.2.0 release](https://github.com/CashBowman/axiovela/releases/tag/v0.2.0). Installers cover Linux x64, Windows x64, Apple Silicon Mac, and Intel Mac. Downloads are public and do not require a GitHub account. Mac builds are ad-hoc signed and unnotarized; Windows installers are unsigned. See the [release record](docs/releases/0.2.0.md) for the native test results and validation limits.
+
+Existing projects and settings remain compatible. Open **Help → Try the example study**, or choose **Project** and connect your provider below the chat composer.
+
+[Installation and first session](docs/quick-start.md) · [Platform validation](docs/releases/0.2.0.md) · [Mac installation](docs/mac-installation.md)
+
+## Develop on your Mac or Windows computer
+
+The `main` branch includes the 0.2.0 release: project tabs, improved chat, on-demand evidence context, provider setup buttons, and source/PDF exports. Three selectable [research profiles](docs/research-profiles.md) preserve domain-specific research instructions.
+
+Clone this repository and follow [Development setup](docs/development-setup.md) for the exact Mac, Windows, and Linux commands, local packaging, and acceptance checks. GitHub desktop and multi-OS builds run only when manually requested. See the current release record for device reports and remaining acceptance checks.
+
+## Prefer to run from source?
+
+Install Git and **Node 22.12+ within Node 22**, then run:
+
+```sh
+git clone https://github.com/CashBowman/axiovela.git
+cd axiovela
+node scripts/install.mjs
+axiovela
+```
+
+The command opens **http://127.0.0.1:8787**; keep the terminal running and use **Ctrl+C** to stop it. Keep the checkout in place because the command links to it. [Full source setup →](docs/quick-start.md#install-from-source)
+
+For the standalone, dependency-free example, run `node examples/linear-regression/run.mjs` from the checkout. [Example walkthrough](examples/linear-regression/README.md) · [Manuscript workspace](docs/demo.md)
+
+## Keep the science under your control
+
+- **Portable work.** Projects use ordinary files and optional Git history.
+- **Evidence first.** Check generated code, measurements, and citations before relying on a claim. [Research principles](docs/scientific-integrity.md)
+- **Your provider.** AI connections use your account and may transmit project context or incur charges. Full access permits commands on your computer. [Security and privacy](SECURITY.md)
+- **Optional research tools.** Markdown and math work immediately. PDF compilation needs Tectonic; Python, GPUs, remote compute, and other tools depend on your experiment. [Setup](docs/quick-start.md#connect-ai-and-set-up-latex)
+
+[Roadmap](docs/roadmap.md) · [Contributing](CONTRIBUTING.md) · [Troubleshooting](docs/troubleshooting.md) · [Changelog](CHANGELOG.md)
+
+Free to use, modify, and share under the [MIT License](LICENSE), without warranty and subject to its liability disclaimer. Read the [beta notice](BETA_NOTICE.md) before use. Existing projects and the `methodflow` and `ml-workbench` commands remain compatible. [Branding and compatibility](docs/branding.md)
+

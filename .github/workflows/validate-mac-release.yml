@@ -1,0 +1,78 @@
+name: Validate retained installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: Desktop release run containing the installer artifacts
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: Axiovela-desktop-ubuntu-latest
+          - os: macos-15
+            artifact: Axiovela-desktop-macos-15
+          - os: macos-15-intel
+            artifact: Axiovela-desktop-macos-15-intel
+          - os: macos-26
+            artifact: Axiovela-desktop-macos-15
+          - os: macos-26-intel
+            artifact: Axiovela-desktop-macos-15-intel
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.build_run }}
+          name: ${{ matrix.artifact }}
+          path: out/make
+      - name: Verify original installer checksums
+        run: shasum -a 256 -c SHA256SUMS-*.txt
+        working-directory: out/make
+      - name: Install the saved Linux DEB
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb ./out/make/deb/x64/*.deb
+      - name: Test the installed Linux app with its system sandbox helper
+        if: runner.os == 'Linux'
+        env:
+          AXIOVELA_TEST_INSTALLED_ROOT: /usr/lib/axiovela
+          HYPOTERA_TEST_LATEX: '1'
+          DEBUG: pw:browser
+        run: |
+          xvfb-run -a npm run desktop:smoke -- --packaged
+          xvfb-run -a npm run beta:feedback:smoke
+          xvfb-run -a npm run desktop:recovery:smoke
+      - name: Install the saved DMG and test launch, rendering, and recovery
+        if: runner.os == 'macOS'
+        env:
+          HYPOTERA_TEST_LATEX: '1'
+        run: node scripts/desktop-dmg-smoke.mjs
+      - name: Test chat, project tabs, copying, setup boundaries, and PDF export
+        if: runner.os == 'macOS'
+        run: npm run beta:feedback:smoke
+      - uses: actions/upload-artifact@v4
+        if: always() && runner.os == 'macOS'
+        with:
+          name: Mac-validation-${{ matrix.os }}
+          path: out/make/MAC-TRUST-*.json
+          if-no-files-found: warn

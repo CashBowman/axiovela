@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "collaboration": {
+    "provider": "git",
+    "remote": "origin",
+    "workflow": "branches-and-pull-requests"
+  },
+  "computeProfiles": [
+    {
+      "id": "local",
+      "label": "Local machine",
+      "type": "local",
+      "projectRoot": "."
+    }
+  ],
+  "experimentTracking": {
+    "schemaVersion": "workbench.run/v1",
+    "adapters": [
+      {
+        "type": "native",
+        "enabled": true,
+        "path": "runs"
+      },
+      {
+        "type": "mlflow",
+        "enabled": false,
+        "path": "mlruns"
+      },
+      {
+        "type": "wandb",
+        "enabled": false,
+        "path": "wandb"
+      }
+    ]
+  },
+  "security": {
+    "adversarialExecution": {
+      "required": true,
+      "runner": "workflows/run-isolated-command.mjs",
+      "runtime": "auto",
+      "image": "docker.io/library/debian:bookworm-slim",
+      "network": "none",
+      "readOnlyRoot": true,
+      "limits": {
+        "memory": "1g",
+        "cpus": "1",
+        "pids": 128,
+        "timeoutSeconds": 300
+      }
+    }
+  }
+}
