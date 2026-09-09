@@ -1,0 +1,29 @@
+AXIOVELA BETA FEEDBACK (fill in only what you tested)
+Send to your inviter. Review/redact attachments before sharing.
+Never send keys, passwords, private projects, or complete logs/conversations.
+
+App version:
+OS version and processor architecture:
+Installer filename and download location:
+Device managed by an institution? yes / no / unknown
+
+For each item: PASS / FAIL / NOT TESTED, plus a short observation.
+- Download and OS installation/approval:
+- Launch and About version:
+- Example study, measured result, figure and write-up:
+- Disposable project creation and import:
+- Save, quit and reopen without losing work:
+- Optional real provider connection and small request:
+- Optional cancellation (already completed actions remain):
+- Optional saved connection after restart:
+- Optional LaTeX / native tools / research environment:
+- Upgrade with a backup (record old and new versions):
+- Uninstall/reinstall preserves project and profile:
+
+For a problem:
+What did you try?
+What did you expect?
+What happened (exact warning, with private details removed)?
+Can you repeat it? Steps:
+Did it prevent installation, lose work, or affect credentials?
+Optional reviewed screenshot:

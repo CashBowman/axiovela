@@ -1,0 +1,101 @@
+{
+  "name": "ml-theory-workbench",
+  "version": "0.2.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "axiovela": "bin/ml-workbench.mjs",
+    "methodflow": "bin/ml-workbench.mjs",
+    "ml-workbench": "bin/ml-workbench.mjs",
+    "hypotera": "bin/ml-workbench.mjs"
+  },
+  "description": "Axiovela: The AI research workbench. Local experiments, evidence, and manuscripts.",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
+  "scripts": {
+    "start": "node scripts/dev.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "backend": "node server/index.mjs",
+    "backend:smoke": "node scripts/backend-smoke.mjs",
+    "assistant:smoke": "node scripts/assistant-smoke.mjs",
+    "provider:smoke": "node scripts/provider-smoke.mjs",
+    "cli-provider:smoke": "node scripts/cli-provider-smoke.mjs",
+    "research:smoke": "node scripts/research-smoke.mjs",
+    "setup:latex": "node scripts/setup-latex.mjs",
+    "setup": "node scripts/install.mjs",
+    "install:cli": "npm run build && npm link --no-audit --no-fund",
+    "check": "npm run build",
+    "example:smoke": "node scripts/example-smoke.mjs",
+    "release:check": "npm run repository:check && npm run check && npm run security:smoke && npm run backend:smoke && npm run assistant:smoke && npm run provider:smoke && npm run cli-provider:smoke && npm run agentic:test && npm run research:smoke && npm run markdown:smoke && npm run example:smoke",
+    "social:render": "node scripts/render-social-preview.mjs",
+    "security:smoke": "node scripts/security-smoke.mjs",
+    "install:smoke": "node scripts/install-smoke.mjs",
+    "repository:check": "node scripts/repository-check.mjs",
+    "markdown:smoke": "node scripts/markdown-smoke.mjs",
+    "desktop:start": "npm run build && electron .",
+    "desktop:package": "npm run build && npm run desktop:tools && node scripts/desktop-notices.mjs && electron-forge package",
+    "desktop:make": "npm run build && npm run desktop:tools && node scripts/desktop-notices.mjs && electron-forge make && node scripts/desktop-artifacts.mjs",
+    "desktop:smoke": "node scripts/desktop-smoke.mjs",
+    "desktop:test": "node --test scripts/desktop-contract.test.mjs scripts/mac-release.test.mjs scripts/atomic-file.test.mjs scripts/assistant-process.test.mjs scripts/provider-setup.test.mjs",
+    "desktop:install:linux": "node scripts/desktop-install-linux.mjs",
+    "desktop:tools": "node scripts/desktop-tools.mjs",
+    "agentic:test": "node --test scripts/agentic-start.test.mjs",
+    "desktop:recovery:smoke": "node scripts/desktop-recovery-smoke.mjs",
+    "desktop:verify:mac": "node scripts/desktop-dmg-smoke.mjs --distribution",
+    "pi:smoke": "node scripts/pi-profile-smoke.mjs",
+    "beta:prepare": "node scripts/beta-prepare.mjs",
+    "desktop:make:portable": "npm run build && npm run desktop:tools && node scripts/desktop-notices.mjs && electron-forge make --targets @electron-forge/maker-zip && node scripts/desktop-artifacts.mjs",
+    "beta:feedback:smoke": "node scripts/beta-feedback-smoke.mjs"
+  },
+  "dependencies": {
+    "@citation-js/core": "^0.7.21",
+    "@citation-js/plugin-bibtex": "^0.7.21",
+    "katex": "^0.18.5",
+    "sharp": "^0.35.4",
+    "yaml": "^2.9.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "busboy": "^1.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CashBowman/axiovela.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CashBowman/axiovela/issues"
+  },
+  "homepage": "https://github.com/CashBowman/axiovela#readme",
+  "devDependencies": {
+    "@electron-forge/cli": "7.11.2",
+    "@electron-forge/maker-deb": "7.11.2",
+    "@electron-forge/maker-rpm": "7.11.2",
+    "@electron-forge/maker-squirrel": "7.11.2",
+    "@electron-forge/maker-zip": "7.11.2",
+    "@electron/packager": "18.4.4",
+    "@fontsource/dm-mono": "^5.3.0",
+    "@fontsource/manrope": "^5.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "electron": "44.2.0",
+    "lucide-react": "^0.468.0",
+    "playwright-core": "1.63.0",
+    "vite": "^8.2.2",
+    "extract-zip": "npm:@electron-internal/extract-zip@1.0.5"
+  },
+  "productName": "Axiovela",
+  "main": "desktop/main.cjs",
+  "author": "Axiovela contributors",
+  "overrides": {
+    "@electron/packager": "18.4.4",
+    "@electron/rebuild": "4.2.0",
+    "tmp": "0.2.7",
+    "extract-zip": "npm:@electron-internal/extract-zip@1.0.5"
+  }
+}

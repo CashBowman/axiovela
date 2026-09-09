@@ -1,0 +1,15 @@
+name: Feature request
+description: Suggest an improvement to a research workflow.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What research task is difficult today?
+      description: Describe the workflow and the friction you encountered.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested improvement
+      description: Include any workaround you currently use.

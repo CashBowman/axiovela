@@ -1,0 +1,75 @@
+AXIOVELA 0.2.0 — DESKTOP RELEASE
+Read the accompanying BETA_NOTICE.txt and LICENSE.txt before participating.
+Use sample/public data and keep independent backups. AI output needs review.
+
+DOWNLOAD
+Download from https://github.com/CashBowman/axiovela/releases/latest
+Downloads are public and do not require a GitHub account.
+Download the installer under Assets, not GitHub's Source code ZIP/tar.gz.
+The app itself does not require a GitHub account, Git, Node, or npm.
+
+CHOOSE YOUR INSTALLER
+- Apple Silicon (M-series), macOS 13+: darwin-arm64.dmg
+- Intel Mac, macOS 13+: darwin-x64.dmg
+- Windows x64: windows-x64-Setup.exe
+- Debian/Ubuntu Linux x64: amd64.deb
+- Fedora-compatible Linux x64: x86_64.rpm
+- Other Linux x64: linux-x64 ZIP (portable; no menu entry installed)
+Use the version in the release title. Quit any older copy before installing.
+
+MAC
+Download the 0.2.0 DMG for your Mac architecture.
+To install: open the matching DMG, drag Axiovela into
+Applications, eject the disk image, then open Axiovela from Applications.
+Default Mac builds are ad-hoc signed, not notarized or automatically trusted.
+GitHub does not bypass Apple checks.
+For a trusted, unchanged download with an unverified-developer warning, try
+opening once, then System Settings → Privacy & Security → Open Anyway → Open,
+if available. macOS saves an exception; new downloads/updates may need it again.
+Stop and report damage, malware, or institutional-policy blocks.
+Do not disable Gatekeeper or remove quarantine using terminal commands.
+Apple instructions: https://support.apple.com/en-us/102445
+
+WINDOWS
+Run Setup.exe and launch Axiovela from Start. The installer is unsigned.
+For a trusted download, an unrecognized-app SmartScreen warning may offer
+More info → Run anyway. Only proceed if you trust the source and device policy
+permits it. Malware warnings, Smart App Control, or institutional policy may
+block the app without an exception. Report the exact warning; do not turn off
+antivirus, Smart App Control, or other system protections to run the beta.
+Microsoft explanation:
+https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation
+
+LINUX
+Open the DEB/RPM in your system software installer and launch Axiovela from
+the application menu. For the ZIP, extract the entire folder into a permanent
+location and open axiovela. If required, use your file manager's Properties to
+allow that executable to run. Keep its sibling files together.
+Saved API keys require an unlocked supported system keyring. Plaintext fallback
+is refused. Report missing libraries or keyring problems through the repository Issues.
+
+FIRST SESSION (ABOUT 15 MINUTES)
+1. Confirm Help → About Axiovela matches the release version.
+2. Choose Help → Try the example study. Inspect Results and the write-up.
+3. Create a disposable project and import a small sample file.
+4. Write and save Markdown, quit completely, reopen, and verify your work.
+5. Optionally connect your own AI provider. Check access mode and billing,
+   make one small request, cancel a running request, and check the connection
+   survives a restart. Stop does not undo actions that already happened.
+6. Optionally compile LaTeX. Tectonic is bundled; its first run needs internet.
+Python/GPU packages and native assistant tools are separate. See OPTIONAL-TOOLS.txt.
+
+UPDATES AND RECOVERY
+Updates are manual. Back up your project outside its folder, quit fully, install
+the reviewed newer version, and check About. Do not delete the MethodFlow user
+profile or projects during an upgrade. Removing the app leaves those separate
+folders in place. If an upgrade fails, stop using that copy and report it; recover
+from a backup rather than editing the sole copy or blindly downgrading formats.
+Downloads are public; submitting an issue requires a GitHub account.
+
+FEEDBACK
+Use BETA-FEEDBACK.txt and reply through the repository Issues, or use the repository's Issues
+if you have access. For security concerns, use a private channel. Never include
+keys, passwords, private research, complete conversations, or unreviewed logs.
+Report a failed installation as a test result; do not force it past OS policy.
+Checksums detect changed files. They are not signatures or security guarantees.

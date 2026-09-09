@@ -1,0 +1,15 @@
+{
+  "roles": {
+    "experiment-planner": {
+      "model": "gpt-5.6-luna",
+      "purpose": "Turn research questions into scoped, reproducible local experiment plans and execute them when the selected access mode permits.",
+      "tools": ["read-project", "list-allowlisted-commands", "preview-run", "read-run-record"]
+    },
+    "writeup-mathematician": {
+      "model": "gpt-5.6-luna",
+      "purpose": "Draft mathematical-statistical research prose without inventing evidence.",
+      "tools": ["read-run-record", "read-artifact-manifest", "writeup-export"]
+    }
+  },
+  "toolPolicy": "The dashboard access selector is authoritative: ask is read-only, auto runs project-local work without interaction, and full bypasses approvals and sandboxing."
+}

@@ -1,0 +1,31 @@
+Setup buttons
+Open Model & provider in Axiovela, choose a CLI, then use Install, Sign in, or Detect installed tools. Fixed setup commands open in the system terminal. Complete any installer/account prompts there, then refresh connections. Node/npm remain prerequisites for npm-based CLI installation.
+
+Included
+Axiovela bundles its own Node runtime, Markdown/tables, inline math, and Tectonic for LaTeX PDF rendering. The first PDF render needs internet access to fetch TeX packages and fonts. Verify with Tools → Check installed tools, then render a LaTeX draft.
+
+Pi (optional)
+The app's runtime does not install terminal node/npm commands. Install Node.js 22.19 or newer on the Node 22 line (including npm) from https://nodejs.org/en/download. Verify node --version and npm --version. Windows also needs Git Bash for Pi's default command tool.
+
+Run in your terminal:
+npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+pi
+
+In Pi, enter /login and select your provider. Verify pi --version. Authentication and provider charges use your own account.
+
+Agentic mode (Pi + Herdr)
+Install Herdr using the platform instructions linked below, then run:
+herdr integration install pi
+
+Selecting Agentic mode checks Pi and starts an installed, stopped Herdr server automatically. It waits for readiness before enabling Pi with Full access. Missing tools or startup errors open platform-specific setup instructions with copyable commands and a retry button. No tools are downloaded automatically. A running Herdr server is reused and is not stopped when Axiovela closes.
+
+Discovery and research tools
+Use Tools → Check installed tools, Add tool folder, or an executable selector if a tool is missing. Restart after changing tool locations. Python, experiment packages, GPU drivers, and Docker/Podman are installed separately when a project needs them. Basic projects and the example require none of these.
+
+Codex (optional)
+Install the CLI: npm install -g @openai/codex (use npm.cmd in Windows PowerShell).
+Sign in: codex
+Find its path on Mac/Linux: command -v codex
+Find its path in Windows PowerShell: (Get-Command codex -CommandType Application -ErrorAction Stop).Source
+Restart Axiovela after installation. If discovery still misses it, open the model/provider setup and choose Locate installed Codex. Paste the printed path into the file picker (Mac: Command-Shift-G; Windows: File name; Linux: Ctrl+L).
+Official setup: https://learn.chatgpt.com/docs/codex/cli

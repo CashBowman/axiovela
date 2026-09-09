@@ -1,0 +1,14 @@
+import sharp from 'sharp';
+import {readFile, writeFile, mkdir} from 'node:fs/promises';
+const source = await readFile(new URL('../public/workbench-mark.png', import.meta.url));
+const directory = new URL('../desktop/icons/', import.meta.url);
+await mkdir(directory, {recursive: true});
+const png = await sharp(source).resize(512, 512).png().toBuffer();
+await writeFile(new URL('icon.png', directory), png);
+const win = await sharp(source).resize(256, 256).png().toBuffer();
+const ico = Buffer.alloc(22); ico.writeUInt16LE(1, 2); ico.writeUInt16LE(1, 4); ico.writeUInt16LE(1, 10); ico.writeUInt16LE(32, 12); ico.writeUInt32LE(win.length, 14); ico.writeUInt32LE(22, 18);
+await writeFile(new URL('icon.ico', directory), Buffer.concat([ico, win]));
+const mac = await sharp(source).resize(1024, 1024).png().toBuffer();
+const icns = Buffer.alloc(16); icns.write('icns'); icns.writeUInt32BE(mac.length + 16, 4); icns.write('ic10', 8); icns.writeUInt32BE(mac.length + 8, 12);
+await writeFile(new URL('icon.icns', directory), Buffer.concat([icns, mac]));
+console.log('Generated desktop icons from the approved Axiovela PNG.');
