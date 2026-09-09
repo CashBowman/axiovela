@@ -11,6 +11,10 @@
 *The included synthetic regression study. The displayed measurements come from its reproducible experiment, with no AI account needed to run the example.*
 
 
+![Axiovela animated workflow: experiment results, figures, and manuscript generation](docs/assets/axiovela-demo.gif)
+
+*Recorded workflow from an earlier interface revision; local output details are redacted. The current release adds the tabs and chat improvements described below.*
+
 Axiovela keeps your code, data, figures, citations, and writing together in ordinary project files on your computer. Connect your AI provider, guide the work, and review the evidence at each step.
 
 ## From question to manuscript
@@ -58,7 +62,7 @@ For the standalone, dependency-free example, run `node examples/linear-regressio
 - **Portable work.** Projects use ordinary files and optional Git history.
 - **Evidence first.** Check generated code, measurements, and citations before relying on a claim. [Research principles](docs/scientific-integrity.md)
 - **Your provider.** AI connections use your account and may transmit project context or incur charges. Full access permits commands on your computer. [Security and privacy](SECURITY.md)
-- **Optional research tools.** Markdown and math work immediately. PDF compilation needs Tectonic; Python, GPUs, remote compute, and other tools depend on your experiment. [Setup](docs/quick-start.md#connect-ai-and-set-up-latex)
+- **Optional research tools.** Markdown and math work immediately. The desktop app includes Tectonic for LaTeX PDFs; source installs need it separately. Python, GPUs, remote compute, and other tools depend on your experiment. [Setup](docs/quick-start.md#connect-ai-and-set-up-latex)
 
 [Roadmap](docs/roadmap.md) · [Contributing](CONTRIBUTING.md) · [Troubleshooting](docs/troubleshooting.md) · [Changelog](CHANGELOG.md)
 
