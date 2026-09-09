@@ -4,7 +4,7 @@
 
 <p align="center"><strong>The AI research workbench.</strong><br />Turn a question into experiments, measured results, and a manuscript.</p>
 
-<p align="center"><a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="docs/releases/0.2.0.md">Release notes</a></p>
+<p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.0">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="docs/releases/0.2.0.md">Release notes</a></p>
 
 ![Axiovela Results: recorded measurements, evidence summary, and experiment figure](docs/assets/axiovela-results.jpg)
 
