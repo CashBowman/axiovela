@@ -30,7 +30,23 @@ Use Codex, Claude Code, Gemini CLI, OpenCode, Pi, or a supported API connection.
 
 Axiovela runs in its own window on **Linux, Windows, and macOS**. The desktop app includes its runtime; no Git, Node, npm, or GitHub account is needed for the example and basic project management.
 
-**Current release: 0.2.0.** Download the matching installer and SHA-256 manifest from the [0.2.0 release](https://github.com/CashBowman/axiovela/releases/tag/v0.2.0). Installers cover Linux x64, Windows x64, Apple Silicon Mac, and Intel Mac. Downloads are public and do not require a GitHub account. See the [release record](docs/releases/0.2.0.md) for the native test results and validation limits.
+**Download Axiovela 0.2.0**
+
+**Windows**
+
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/Axiovela-0.2.0.Setup.exe"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/windows.png" alt="Download Windows: Intel / AMD · 64-bit" width="320" height="88" /></a>
+
+**macOS**
+
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/Axiovela-0.2.0-darwin-arm64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-arm.png" alt="Download Mac · Apple Silicon: M-series chips" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/Axiovela-0.2.0-darwin-x64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-intel.png" alt="Download Mac · Intel: Intel processors" width="320" height="88" /></a>
+
+**Linux**
+
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/axiovela_0.2.0_amd64.deb"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-deb.png" alt="Download Ubuntu / Debian: Linux · 64-bit · .deb" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.0/axiovela-0.2.0-1.x86_64.rpm"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-rpm.png" alt="Download Fedora / RPM: Linux · 64-bit · .rpm" width="320" height="88" /></a>
+
+[Help choosing a download, portable ZIPs, and release notes](https://github.com/CashBowman/axiovela/releases/tag/v0.2.0)
 
 Existing projects and settings remain compatible. Open **Help → Try the example study**, or choose **Project** and connect your provider below the chat composer.
 
