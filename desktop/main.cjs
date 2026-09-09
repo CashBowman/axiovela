@@ -9,6 +9,8 @@ const {credentialStore} = require('./credentials.cjs');
 const {toolEnvironment, toolKeys, toolStatus} = require('./tools.cjs');
 const {attachWindowRecovery} = require('./recovery.cjs');
 const {atomicWriteFile} = require('../server/atomic-file.cjs');
+const {Updates, releaseRoot} = require('./updates.cjs');
+let updates;
 let toolSettings = {};
 let recoverWindow;
 
@@ -150,6 +152,7 @@ async function requestClose() {
 async function stopBackend() {
   if (stopping) return;
   stopping = true;
+  updates?.cancel();
   if (backend?.connected) backend.send({type: 'shutdown'});
   if (backendExit) {
     let timer;
@@ -211,6 +214,24 @@ else {
     // The renderer only talks to our custom origin. External links open in the browser.
     session.defaultSession.webRequest.onBeforeRequest({urls: ['http://*/*', 'https://*/*', 'file://*/*']}, (_details, callback) => callback({cancel: true}));
     protocol.handle('methodflow', proxyRequest);
+    updates = new Updates({profile: app.getPath('userData'), currentVersion: app.getVersion()});
+    await updates.initialize().catch(() => updates.set({status: 'error', error: 'Update storage is unavailable. Your workspace can still be used.'}));
+    updates.on('change', state => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('desktop:update-state', state); });
+    ipcMain.handle('desktop:update', async (event, action, value) => {
+      trustedSender(event);
+      switch (action) {
+        case 'state': return updates.snapshot();
+        case 'check': return updates.check();
+        case 'channel': await updates.channel(value); return updates.check();
+        case 'download': return updates.download(value);
+        case 'cancel': updates.cancel(); return updates.snapshot();
+        case 'releases': await shell.openExternal(releaseRoot); return updates.snapshot();
+        // Reveal only. Launching even a verified installer while tasks run could
+        // replace the application behind an active workspace.
+        case 'reveal': if (updates.downloaded) shell.showItemInFolder(updates.downloaded); return updates.snapshot();
+        default: throw new Error('Unknown update action.');
+      }
+    });
     ipcMain.handle('desktop:setup-provider', async (event, id, action) => { trustedSender(event); return launchSetup(id, action, {env: toolEnvironment(process.env, toolSettings, {root})}); });
     ipcMain.handle('desktop:detect-tools', async event => { trustedSender(event); return toolStatus(nodeEnvironment()); });
     ipcMain.handle('desktop:export-markdown-pdf', async (event, resource) => {
@@ -268,7 +289,7 @@ else {
         }},
         {label: 'Reset tool locations', click: async () => { toolSettings = {}; await saveToolSettings(); }},
       ]},
-      {label: 'Help', submenu: [{label: 'Try the example study', click: () => mainWindow?.webContents.send('desktop:example-requested')}, {
+      {label: 'Help', submenu: [{label: 'Check for updates…', click: () => { mainWindow?.webContents.send('desktop:update-open'); void updates.check(); }}, {label: 'Try the example study', click: () => mainWindow?.webContents.send('desktop:example-requested')}, {
         label: 'Optional tool setup…',
         click: async () => {
           const detail = await fs.readFile(path.join(__dirname, 'tool-setup.txt'), 'utf8');
@@ -286,5 +307,13 @@ else {
     ]));
     try { const saved = JSON.parse(await fs.readFile(path.join(app.getPath('userData'), 'tools.json'), 'utf8')); toolSettings = saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {}; } catch { toolSettings = {}; }
     await startBackend(); await createWindow();
+    // Tests and source launches are offline by default. Production checks never
+    // download installers and never display a modal dialog.
+    if (app.isPackaged && !profileOverride && !process.env.CI) {
+      const startup = setTimeout(() => void updates.check(), 30000);
+      const periodic = setInterval(() => void updates.check(), 6 * 60 * 60 * 1000);
+      startup.unref(); periodic.unref();
+      app.once('will-quit', () => { clearTimeout(startup); clearInterval(periodic); updates.cancel(); });
+    }
   }).catch(async error => { console.error(`Cannot start Axiovela: ${error.message}`); if (!process.env.CI) dialog.showErrorBox('Cannot start Axiovela', error.message); await stopBackend(); app.exit(1); });
 }

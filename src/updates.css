@@ -1,0 +1,12 @@
+.update-notice { position: fixed; right: 20px; bottom: 20px; z-index: 120; font-size: 13px; }
+.update-notice button, .update-notice select { font: inherit; color: inherit; background: #fff; border: 1px solid #cbd5dc; border-radius: 7px; padding: 7px 10px; cursor: pointer; }
+.update-notice button:disabled { opacity: .55; cursor: wait; }
+.update-notice button:focus-visible, .update-notice select:focus-visible { outline: 2px solid #2463a6; outline-offset: 2px; }
+.update-badge { box-shadow: 0 3px 16px #24384a20; }
+.update-panel { width: min(390px, calc(100vw - 40px)); max-height: calc(100vh - 60px); overflow: auto; padding: 18px; background: #f9fbfc; color: #253444; border: 1px solid #ccd6de; border-radius: 12px; box-shadow: 0 8px 40px #24384a25; }
+.update-heading, .update-panel label { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.update-panel small { display: block; color: #576777; margin-bottom: 12px; }
+.update-panel p { line-height: 1.5; margin: 12px 0; }
+.update-notes { white-space: pre-wrap; max-height: 150px; overflow: auto; overflow-wrap: anywhere; }
+.update-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.update-panel progress { width: 100%; }

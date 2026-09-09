@@ -83,3 +83,7 @@ The default Mac artifacts now receive ad-hoc signatures to seal bundle integrity
 This beta uses manual updates: **Help → Downloads and release notes**, quit, and install the reviewed newer version. Automatic download/install is intentionally deferred until a signed release channel and update/rollback tests exist.
 
 For upgrades from a MethodFlow beta, see [branding and compatibility](branding.md#existing-installations-and-projects). The stored profile and credentials retain their original identity.
+
+The [guided update system](updates.md) adds quiet release checks and an explicit
+download flow when signed metadata is configured. Installation remains manual;
+it never restarts the application or replaces files during research.

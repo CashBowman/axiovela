@@ -14,6 +14,7 @@ import '@fontsource/dm-mono/latin-400.css';
 import '@fontsource/dm-mono/latin-500.css';
 import React, {lazy, Suspense, useEffect, useId, useRef, useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import UpdateNotice from './UpdateNotice.jsx';
 import {ArrowUpRight, Check, ChevronDown, CircleHelp, Download, FileText, LayoutPanelTop, Paperclip, Play, Plus, RefreshCcw, Send, Sparkles, Square, X} from 'lucide-react';
 import './style.css';
 import './research-ui.css';
@@ -1258,6 +1259,6 @@ function App() {
   </main>;
 }
 
-createRoot(document.getElementById('root')).render(<App/>);
+createRoot(document.getElementById('root')).render(<><App/><UpdateNotice/></>);
 
 export default App;

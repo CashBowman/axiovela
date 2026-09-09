@@ -81,7 +81,7 @@ try {
   await page.getByRole('dialog').waitFor({state: 'hidden'});
   if (((process.env.AXIOVELA_SCREENSHOT || process.env.HYPOTERA_SCREENSHOT) || process.env.METHODFLOW_SCREENSHOT)) await page.screenshot({path: ((process.env.AXIOVELA_SCREENSHOT || process.env.HYPOTERA_SCREENSHOT) || process.env.METHODFLOW_SCREENSHOT) + '-welcome.png'});
   assert.equal(await page.evaluate(() => typeof window.require), 'undefined');
-  assert.deepEqual(await page.evaluate(() => Object.keys(window.methodflowDesktop).sort()), ['chooseData', 'chooseFolder', 'chooseTool', 'createExample', 'detectTools', 'exportMarkdownPdf', 'onExampleRequest', 'setupProvider']);
+  assert.deepEqual(await page.evaluate(() => Object.keys(window.methodflowDesktop).sort()), ['chooseData', 'chooseFolder', 'chooseTool', 'createExample', 'detectTools', 'exportMarkdownPdf', 'onExampleRequest', 'onUpdate', 'onUpdateOpen', 'setupProvider', 'update']);
   assert.equal(await page.evaluate(() => location.href), 'methodflow://app/');
   const preferences = await application.evaluate(({BrowserWindow}) => {
     const p = BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences();
