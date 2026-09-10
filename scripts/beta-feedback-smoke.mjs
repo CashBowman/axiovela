@@ -69,6 +69,7 @@ try {
   await app.evaluate(({dialog}, target) => { dialog.showSaveDialog = async () => ({canceled: false, filePath: target}); }, pdf);
   await page.getByRole('button', {name: 'Export PDF', exact: true}).click();
   await page.waitForFunction(() => !document.querySelector('.previewButtons')?.textContent.includes('Exporting'));
+  assert.equal(await page.locator('.compileError').count(), 0, await page.locator('.compileError').allTextContents().then(items => items.join(' ')));
   assert.equal((await readFile(pdf)).subarray(0, 5).toString(), '%PDF-');
   await cp(pdf, path.join(root, '.local/beta-feedback-export.pdf'));
   for (const [id, action] of [['pi;evil', 'install'], ['pi', 'execute']]) assert.match(await page.evaluate(async ([id, action]) => { try { await window.methodflowDesktop.setupProvider(id, action); return 'unexpected'; } catch (e) { return e.message; } }, [id, action]), /Unknown setup/);

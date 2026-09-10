@@ -11,7 +11,7 @@ import {randomBytes} from 'node:crypto';
 import {once} from 'node:events';
 import {fileURLToPath} from 'node:url';
 const require = createRequire(import.meta.url);
-const {isAppUrl, isExternalUrl, allowsPermission} = require('../desktop/security.cjs');
+const {isAppUrl, isExternalUrl, allowsPermission, isMarkdownPdfResource} = require('../desktop/security.cjs');
 const {credentialStore} = require('../desktop/credentials.cjs');
 const config = require('../forge.config.cjs');
 
@@ -183,4 +183,12 @@ test('Linux launcher refuses a stale package before changing the application men
     assert.match(result.stderr, /Packaged app is 0.2.0-beta.6/);
     await assert.rejects(readFile(path.join(data, 'applications/axiovela.desktop')), {code: 'ENOENT'});
   } finally { await rm(temporary, {recursive: true, force: true}); }
+});
+
+
+test('Markdown PDF export accepts scoped documents while retaining its resource boundary', () => {
+  const resource = '/api/artifacts/file?path=exports%2Fchat-ab12-cd34.html';
+  assert.ok(isMarkdownPdfResource(resource));
+  for (const workspace of ['/tmp/project α', 'C:\\research\\project β']) assert.ok(isMarkdownPdfResource(`${resource}&workspace=${encodeURIComponent(workspace)}`));
+  for (const value of [null, `https://example.com${resource}`, `${resource}&other=1`, `${resource}&path=exports%2Fchat-ab12.html`, `${resource}&workspace=a&workspace=b`, `${resource}&workspace=`, `${resource}&workspace=%00`, `${resource}#fragment`, '/api/artifacts/file?path=exports%2F..%2Fsecret.html', '/api/artifacts/file?path=exports%2Fother.html']) assert.equal(isMarkdownPdfResource(value), false, String(value));
 });

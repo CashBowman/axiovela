@@ -345,6 +345,9 @@ Axiovela packaged LaTeX: $\int_0^1 x^2\,dx=1/3$.
   await editor.evaluate(element => {
     const transfer = new DataTransfer();
     transfer.setData('application/x-workbench-artifact', JSON.stringify({path: 'artifacts/figures/wrapped.png', caption: 'Wrapped'}));
+    // Filling a textarea may scroll to its final caret on Windows. This drop
+    // deliberately targets the first wrapped line; test scrolling separately.
+    element.scrollTop = 0;
     const rect = element.getBoundingClientRect();
     element.dispatchEvent(new DragEvent('drop', {bubbles: true, cancelable: true, dataTransfer: transfer, clientY: rect.top + 80}));
   });

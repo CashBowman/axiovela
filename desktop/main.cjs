@@ -4,7 +4,7 @@ const {launchSetup} = require('./provider-setup.cjs');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const {randomBytes} = require('node:crypto');
-const {APP_URL, isAppUrl, isExternalUrl, allowsPermission} = require('./security.cjs');
+const {APP_URL, isAppUrl, isExternalUrl, allowsPermission, isMarkdownPdfResource} = require('./security.cjs');
 const {credentialStore} = require('./credentials.cjs');
 const {toolEnvironment, toolKeys, toolStatus} = require('./tools.cjs');
 const {attachWindowRecovery} = require('./recovery.cjs');
@@ -236,7 +236,7 @@ else {
     ipcMain.handle('desktop:detect-tools', async event => { trustedSender(event); return toolStatus(nodeEnvironment()); });
     ipcMain.handle('desktop:export-markdown-pdf', async (event, resource) => {
       trustedSender(event);
-      if (typeof resource !== 'string' || !/^\/api\/artifacts\/file\?path=exports%2Fchat-[a-f0-9-]+\.html$/.test(resource)) throw new Error('Choose a rendered Markdown document.');
+      if (!isMarkdownPdfResource(resource)) throw new Error('Choose a rendered Markdown document.');
       const choice = await dialog.showSaveDialog(mainWindow, {title: 'Export PDF', defaultPath: 'research-writeup.pdf', filters: [{name: 'PDF document', extensions: ['pdf']}]});
       if (choice.canceled || !choice.filePath) return false;
       const preview = new BrowserWindow({show: false, webPreferences: {sandbox: true, contextIsolation: true, nodeIntegration: false, javascript: false}});
