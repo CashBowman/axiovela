@@ -3,6 +3,10 @@ name: Validate retained installers
 on:
   workflow_dispatch:
     inputs:
+      interaction_only:
+        description: Skip Windows launch checks already validated; test UI and recovery
+        type: boolean
+        default: false
       runner:
         description: Platform to validate (all includes both Mac architectures on Tahoe)
         type: choice
@@ -48,7 +52,7 @@ jobs:
         shell: bash
         run: node --input-type=module -e "import extract from 'extract-zip'; import path from 'node:path'; await extract(path.resolve('out/make/zip/win32/' + process.arch + '/Axiovela-win32-' + process.arch + '-0.2.2.zip'), {dir:path.resolve('out/Axiovela-win32-' + process.arch)});"
       - name: Test the saved Windows application
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && !inputs.interaction_only
         env:
           HYPOTERA_TEST_LATEX: '1'
         run: npm run desktop:smoke -- --packaged

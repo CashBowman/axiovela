@@ -11,23 +11,32 @@ const home = path.join(tmp, 'home'); await mkdir(home);
 const env = {...process.env, APPDATA: path.join(home, 'AppData/Roaming'), LOCALAPPDATA: path.join(home, 'AppData/Local'), TECTONIC_CACHE_DIR: path.join(home, 'tectonic-cache'), HOME: home, USERPROFILE: home, AXIOVELA_DESKTOP_PROFILE: path.join(tmp, 'profile'), XDG_CONFIG_HOME: home, XDG_CACHE_HOME: home};
 for (const directory of [env.APPDATA, env.LOCALAPPDATA, env.TECTONIC_CACHE_DIR]) await mkdir(directory, {recursive: true});
 for (const key of Object.keys(env)) if (/^(WORKBENCH_|OPENAI_|ANTHROPIC_|GEMINI_|GOOGLE_|AZURE_|ELECTRON_RUN_AS_NODE$|NODE_OPTIONS$)/.test(key)) delete env[key];
-await writeFile(path.join(tmp, 'codex.mjs'), (await readFile('scripts/fixtures/assistant-rpc.mjs', 'utf8')).replace('}, 140);', '}, 5000);'));
+// Hold the first queued turn until the UI has actually queued its follow-up.
+// A fixed delay races slow native hosts and does not test queue semantics.
+const fixture = "import {existsSync} from 'node:fs';\n" + (await readFile('scripts/fixtures/assistant-rpc.mjs', 'utf8')).replace('setTimeout(() => {', `setTimeout(async () => {
+        while (request === 'First queued-chain turn' && !existsSync(path.join(process.cwd(), '.release-queued-fixture'))) await new Promise(resolve => setTimeout(resolve, 25));`);
+await writeFile(path.join(tmp, 'codex.mjs'), fixture);
 env.WORKBENCH_CODEX_PATH = path.join(tmp, 'codex.mjs');
-let app;
+let app, page;
 try {
   app = await electron.launch({executablePath: electronBinary, args: [root], env, chromiumSandbox: false});
-  const page = await app.firstWindow(); page.setDefaultTimeout(30000); await page.waitForLoadState();
+  page = await app.firstWindow(); page.setDefaultTimeout(30000); await page.waitForLoadState();
   await page.waitForFunction(() => document.querySelector('select[aria-label="Conversation"]')?.disabled === false);
   await page.getByRole('button', {name: 'Project', exact: true}).click();
   await page.getByRole('textbox', {name: 'Project folder'}).fill(path.join(tmp, 'project-one'));
   await page.getByRole('button', {name: 'Open or create', exact: true}).click();
   await page.getByRole('dialog').waitFor({state: 'hidden'});
   const composer = page.getByRole('textbox', {name: 'Experiment Chatbot message'});
+  const sendPrompt = async () => {
+    const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/assistant' && r.request().method() === 'POST');
+    await page.getByRole('button', {name: 'Send', exact: true}).click();
+    assert.equal((await response).status(), 202);
+  };
   const shortHeight = await composer.evaluate(el => el.getBoundingClientRect().height);
   const prompt = Array.from({length: 16}, (_, i) => `Line ${i}: preserve this readable prompt.`).join('\n');
   await composer.fill(prompt);
   assert.ok(await composer.evaluate(el => el.getBoundingClientRect().height) > shortHeight + 100);
-  await page.getByRole('button', {name: 'Send', exact: true}).click();
+  await sendPrompt();
   await page.waitForFunction(() => document.querySelector('.message.ai .messageCopy'));
   assert.ok(await composer.evaluate(el => el.getBoundingClientRect().height) <= shortHeight + 2);
   await page.getByRole('button', {name: 'Show full prompt'}).click();
@@ -39,19 +48,25 @@ try {
   await page.locator('.message.ai .messageCopy').last().getByText('Copied', {exact: true}).waitFor();
   assert.match((await app.evaluate(({clipboard}) => clipboard.readText())).replace(/\r\n/g, '\n'), /Created the project/);
   // Keep the task running long enough to exercise queue and cancel controls.
-  await composer.fill('FIXTURE_HANG'); await page.getByRole('button', {name: 'Send', exact: true}).click();
+  await composer.fill('FIXTURE_HANG'); await sendPrompt();
   await page.getByRole('button', {name: 'Stop task'}).waitFor();
   await composer.fill('Queued follow-up'); await page.getByRole('button', {name: 'Queue message', exact: true}).click();
   assert.match(await page.locator('.promptQueue').innerText(), /Queued follow-up/);
   await page.getByRole('button', {name: 'Stop task'}).click();
   await page.getByRole('button', {name: 'Stop task'}).waitFor({state: 'hidden'});
   assert.equal(await page.locator('.promptQueue').count(), 0);
-  // Queue during a normal run: click synchronously before the fixture finishes.
+  // Queue while the fixture waits for our explicit release signal.
   await composer.fill('First queued-chain turn');
-  await page.getByRole('button', {name: 'Send', exact: true}).click();
+  await sendPrompt();
   await composer.fill('Second queued-chain turn');
   await page.getByRole('button', {name: 'Queue message', exact: true}).click();
-  await page.waitForFunction(async () => { const h = await fetch('/api/assistant').then(r => r.json()); return h.jobs.some(j => j.message === 'Second queued-chain turn' && j.status === 'complete'); });
+  assert.match(await page.locator('.promptQueue').innerText(), /Second queued-chain turn/);
+  await writeFile(path.join(tmp, 'project-one/.release-queued-fixture'), 'release');
+  const deadline = Date.now() + 20000;
+  while (!(await page.evaluate(() => fetch('/api/assistant').then(r => r.json()))).jobs.some(j => j.message === 'Second queued-chain turn' && j.status === 'complete')) {
+    assert.ok(Date.now() < deadline, 'Queued turn did not complete');
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
   await page.getByRole('button', {name: 'Stop task'}).waitFor({state: 'hidden'});
   await page.locator('.promptQueue').waitFor({state: 'hidden'});
   await composer.fill('Unsent draft in project one');
@@ -76,4 +91,7 @@ try {
   for (const [id, action] of [['pi;evil', 'install'], ['pi', 'execute']]) assert.match(await page.evaluate(async ([id, action]) => { try { await window.methodflowDesktop.setupProvider(id, action); return 'unexpected'; } catch (e) { return e.message; } }, [id, action]), /Unknown setup/);
   await page.screenshot({path: path.join(root, '.local/beta-feedback-ui.png')});
   console.log('Beta feedback smoke passed: growing composer, compact/copy prompts and replies, queue dispatch/cancel, project draft isolation, bibliography placement, native Markdown PDF, setup allowlist.');
-} finally { await app?.close(); await rm(tmp, {recursive: true, force: true}); }
+} catch (error) {
+  console.error(JSON.stringify({error: error.stack, body: await page?.locator('body').innerText().catch(() => ''), history: await page?.evaluate(() => fetch('/api/assistant?allConversations=1').then(r => r.json())).catch(() => null)}, null, 2));
+  throw error;
+} finally { await app?.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response: 1}); }).catch(() => {}); await app?.close(); await rm(tmp, {recursive: true, force: true}); }
