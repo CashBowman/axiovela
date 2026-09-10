@@ -118,7 +118,7 @@ function piToolLabel(event, command, actions) {
   return command ? 'Running a project command' : 'Working with project tools';
 }
 
-async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession, onEffective, onOutput, onEvent, onUsage, onAgentActivity, env}, model) {
+async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession, onEffective, onOutput, onEvent, onActivity, onUsage, onAgentActivity, env}, model) {
   const rpc = piConnect(cwd, mode, sessionId || randomUUID(), env, selection.profileId);
   let output = '', rejectDone;
   const herdrCalls = new Map();
@@ -130,6 +130,12 @@ async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession
     rejectDone = reject;
     rpc.on('failure', reject);
     rpc.on('event', e => {
+      // Count real provider progress, including deltas that do not change the
+      // public timeline. RPC responses to our own requests are not activity.
+      if (['agent_start', 'agent_end', 'turn_start', 'turn_end', 'message_start', 'message_update', 'message_end', 'tool_execution_start', 'tool_execution_update', 'tool_execution_end'].includes(e.type)) onActivity?.();
+      if (e.type === 'message_update' && ['text_start', 'text_delta', 'thinking_start', 'thinking_delta'].includes(e.assistantMessageEvent?.type)) {
+        onEvent({kind: 'status', label: 'Composing response', status: 'running'});
+      }
       if (e.type === 'message_end' && e.message?.role === 'assistant') {
         if (e.message.stopReason === 'error') {
           const detail = typeof e.message.errorMessage === 'string' && e.message.errorMessage.length <= 300 ? e.message.errorMessage : '';
@@ -151,6 +157,7 @@ async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession
         const actions = herdrCalls.get(callId) || [];
         if (callId) herdrCalls.delete(callId);
         reportAgents(actions.map(item => ({name: item.name, status: e.isError || e.error ? 'failed' : item.action === 'wait' ? 'done' : item.action === 'start' ? 'idle' : 'working'})));
+        onEvent({kind: 'tool', label: e.isError || e.error ? 'Project tool reported an error' : 'Project tool finished', status: 'complete'});
       }
       if (e.type === 'agent_end') output.trim() ? resolve(output) : reject(new Error('Pi returned no user-facing response.'));
     });

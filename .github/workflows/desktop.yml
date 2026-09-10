@@ -7,7 +7,7 @@ on:
         description: Platform to build (all for a release)
         type: choice
         default: macos-15
-        options: [all, ubuntu-latest, windows-latest, macos-15, macos-15-intel]
+        options: [all, ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15, macos-15-intel]
 
 permissions:
   contents: read
@@ -21,9 +21,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJSON(inputs.runner && inputs.runner != 'all' && format('["{0}"]', inputs.runner) || '["ubuntu-latest","windows-latest","macos-15","macos-15-intel"]') }}
+        os: ${{ fromJSON(inputs.runner && inputs.runner != 'all' && format('["{0}"]', inputs.runner) || '["ubuntu-latest","ubuntu-24.04-arm","windows-latest","windows-11-arm","macos-15","macos-15-intel"]') }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
         with:
@@ -37,11 +37,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y fakeroot rpm xvfb
       - run: npm ci
       - run: npm run desktop:test
-      - run: npm run desktop:make
+      - name: Build native release artifacts
         id: package
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}-${{ runner.arch }}" = "Windows-ARM64" ]; then
+            npm run desktop:make:portable
+          else
+            npm run desktop:make
+          fi
       - name: Install the Linux DEB as an end user would
         if: runner.os == 'Linux'
-        run: sudo apt-get install -y ./out/make/deb/x64/*.deb
+        run: sudo apt-get install -y ./out/make/deb/*/*.deb
       - name: Test the packaged Linux application
         if: runner.os == 'Linux'
         env:
@@ -66,6 +73,12 @@ jobs:
       - name: Test chat, project tabs, setup boundaries, and PDF export (Mac/Windows)
         if: runner.os != 'Linux'
         run: npm run beta:feedback:smoke
+      - name: Test concurrent chats (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run parallel:smoke
+      - name: Test concurrent chats (Mac/Windows)
+        if: runner.os != 'Linux'
+        run: npm run parallel:smoke
       - name: Test recovery (Linux)
         if: runner.os == 'Linux'
         env:

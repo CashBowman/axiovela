@@ -41,12 +41,12 @@ export function FigureViewer({figures, initialIndex, url, close}) {
   </dialog>, document.body);
 }
 
-export default function FigureGallery({artifacts = [], runs = [], apiBase = '', insertArtifact}) {
+export default function FigureGallery({artifacts = [], runs = [], apiBase = '', projectRoot = '', insertArtifact}) {
   const [viewer, setViewer] = useState(null);
   const [selection, setSelection] = useState('');
   const {options, unlinked, active, sections} = organizeFigures(artifacts, runs, selection);
   const figures = sections.flatMap(section => section.entries.map(entry => entry.artifact)).filter(item => item.type !== 'pdf');
-  const url = item => `${apiBase}/api/artifacts/file?path=${encodeURIComponent(item.path)}`;
+  const url = item => `${apiBase}/api/artifacts/file?path=${encodeURIComponent(item.path)}&workspace=${encodeURIComponent(projectRoot)}`;
   if (!artifacts.length && !runs.length) return <div className="emptyResearch"><FileText size={18}/><p>No figures yet.</p></div>;
   return <div className="figureGalleryPanel"><div className="galleryTools">
     <label className="figureFilter">Figures from<select aria-label="Figures from" value={active} onChange={event => { setSelection(event.target.value); setViewer(null); }}>

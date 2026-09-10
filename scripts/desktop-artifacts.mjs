@@ -29,7 +29,7 @@ await writeFile(path.join(directory, `BUILD-INFO-${process.platform}-${process.a
 await cp(path.join(root, 'BETA_NOTICE.md'), path.join(directory, 'BETA_NOTICE.txt'));
 await cp(path.join(root, 'LICENSE'), path.join(directory, 'LICENSE.txt'));
 await cp(path.join(root, 'desktop/tool-setup.txt'), path.join(directory, 'OPTIONAL-TOOLS.txt'));
-await cp(path.join(root, 'docs/beta-start-here.txt'), path.join(directory, 'START-HERE.txt'));
+await cp(path.join(root, 'docs/release-start-here.txt'), path.join(directory, 'START-HERE.txt'));
 await cp(path.join(root, 'docs/beta-feedback.txt'), path.join(directory, 'BETA-FEEDBACK.txt'));
 if (process.platform === 'darwin' && process.arch === 'arm64') {
   await cp(path.join(root, 'docs/mac-beta-start-here.txt'), path.join(directory, 'START-HERE-APPLE-SILICON.txt'));

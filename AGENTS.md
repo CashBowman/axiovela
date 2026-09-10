@@ -15,6 +15,8 @@ When updating this file, preserve this bar for all agents and keep entries conci
 
 ## Project notes
 
+- Guided updates: `desktop/updates.cjs` and `docs/updates.md`. Native installation is intentionally unavailable with the current signing/distribution constraints. Never add install-on-quit or an unattended replacement path. `npm run updates:test` and `npm run updates:smoke` use isolated fixtures; local `updates:publish` uploads to an existing GitHub draft without dispatching builds. Provision a real pinned public key before claiming verified downloads work in shipped builds.
+
 - Final Mac bundles need a fresh signature after packaging; ad-hoc integrity is separate from Gatekeeper trust. `scripts/mac-trust-report.mjs` and `scripts/desktop-dmg-smoke.mjs` preserve policy failures and check the installed seal. A passing desktop job is not distribution approval when the saved policy assessment rejects the app. `npm run desktop:verify:mac` is the separate mandatory distribution gate; see `docs/mac-distribution.md`.
 
 - macOS DMG staging must preserve framework symlinks verbatim (`scripts/desktop-bundle.mjs`); Node's default `cp` rewrites relative links to build-host paths. Packaged-directory smoke tests do not validate the final DMG; verify the installed DMG on a Mac before handoff.
@@ -38,7 +40,7 @@ When updating this file, preserve this bar for all agents and keep entries conci
 
 - On Windows, cancellation and timeout paths must not report completion until their child process tree has exited; otherwise isolated profile cleanup can fail with `EBUSY`. Playwright-attached Windows renderers may ignore process-kill crash simulations, so the recovery smoke emits Electron's `render-process-gone` event there while Mac/Linux retain a real forced renderer crash.
 
-- Desktop distribution defaults to ad-hoc signing on Mac and unsigned Windows installers, without Apple enrollment. Use `docs/releases/0.2.0.md` for release validation limits; `scripts/desktop-artifacts.mjs` includes cross-platform handoff files. Keep real-machine acceptance distinct from native CI.
+- Desktop distribution defaults to ad-hoc signing on Mac and unsigned Windows installers, without Apple enrollment. Use `docs/releases/0.2.2.md` for release validation limits; `scripts/desktop-artifacts.mjs` includes cross-platform handoff files. Keep real-machine acceptance distinct from native CI.
 
 - New-machine setup is in `docs/development-setup.md`. Build and Desktop beta workflows are manual to control cost. If present, consult `.local/DEVELOPMENT-HANDOFF.md` for private continuation notes; never commit or package `.local/`. Ignored notes must be transferred separately from Git.
 
@@ -47,3 +49,5 @@ When updating this file, preserve this bar for all agents and keep entries conci
 - Research profiles are allowlisted in `server/research-profiles.mjs`; bundled skills under `server/research-skills` must ship with the backend. Pi receives an explicit `--skill` alongside `--no-skills`; other engines receive the same text, and worker briefs inherit it. Profile changes require a new native session with conversation handoff, preserving model/access choices. See `docs/research-profiles.md`.
 
 - Beta chat/navigation/export contracts: `docs/beta-feedback.md`; run `npm run beta:feedback:smoke` in addition to desktop checks. Assistant evidence is retrieved on demand, not injected per turn. Desktop provider setup accepts only fixed tool/action IDs in `desktop/provider-setup.cjs`, never renderer command text.
+
+- Parallel conversations: `src/useParallelAssistant.js` owns task polling and per-conversation follow-up queues. `server/index.mjs` captures request roots with AsyncLocalStorage; preserve `x-axiovela-project` through the desktop bridge. Keep job reads/cancellation scoped and admit only one turn per conversation. Run `npm run parallel:smoke` for overlapping roles/projects, hidden queues, stalled status/upload isolation and reload recovery. Keep activity freshness separate from timeline deduplication. This is shared-project concurrency, not worktree isolation.

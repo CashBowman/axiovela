@@ -1,6 +1,6 @@
 # What Axiovela can do
 
-These features are implemented in the current beta. Optional integrations require their corresponding tools and accounts. See [validation status](releases/0.2.0.md) for tested platforms and remaining acceptance work.
+These features are implemented in the current release. Optional integrations require their corresponding tools and accounts. See [validation status](releases/0.2.2.md) for tested platforms and remaining acceptance work.
 
 ## Desktop application
 
@@ -17,6 +17,14 @@ These features are implemented in the current beta. Optional integrations requir
 - Persist the last intentionally selected project
 - Create a portable scaffold and project manifest, with optional independent Git history in the UI
 - Install the cross-platform `axiovela` command and serve the built UI/API together (`methodflow` and `ml-workbench` remain aliases)
+
+## Parallel productivity
+
+- Concurrent experiment and writing chats across multiple project tabs
+- New conversations and ordered background follow-up queues while other tasks run
+- Independent cancellation, per-chat drafts, and running-task recovery after renderer reload
+- Responsive status polling and Pi streaming/tool activity reporting
+- [Parallel chat workflow and boundaries](parallel-chats.md)
 
 ## AI research workflow
 

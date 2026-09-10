@@ -33,7 +33,7 @@ try {
   for (const file of ['tools.json', 'window.json', 'state.json']) await writeFile(path.join(profile, file), '{invalid JSON');
   let page = await launch();
   // Allow initial project loading to finish, then check the actual unload guard.
-  await page.waitForFunction(() => document.querySelector('.projectSwitcher')?.textContent.includes('Choose project'));
+  await page.waitForFunction(() => document.querySelector('.projectTabs button[aria-label="Project"]') && !document.querySelector('.activeProjectTab'));
   assert.equal(await page.evaluate(() => { const event = new Event('beforeunload', {cancelable: true}); window.dispatchEvent(event); return event.defaultPrevented; }), false);
   await application.close(); application = null;
   console.log('Recovery smoke: clean blank-workspace quit and corrupt-settings startup passed');

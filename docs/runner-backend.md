@@ -40,3 +40,39 @@ Bibliography (`GET|PUT /api/bibliography`) reads, validates, and saves the proje
 Infrastructure (`GET|PUT /api/infrastructure`) reads or validates `config/workbench.json`. Git is the collaboration layer; local, SSH, and Slurm-over-SSH are the compute profile types. Native, MLflow, and W&B offline adapters are discovered and normalized to the portable `workbench.run/v1` contract in `docs/workbench-run.schema.json`. Secrets are intentionally not part of the configuration schema.
 
 `POST /api/assistant/agentic/enable` accepts `{projectRoot}`. It refreshes Pi discovery, starts an installed stopped Herdr server, and returns `{pi, agentic, projectRoot}` after readiness. Missing prerequisites, incompatibility, or startup failure return HTTP 409 with `error.details.agentic` for the setup dialog. It never installs tools or starts model requests, rejects stale projects and active assistant jobs, and uses the normal origin/session checks and project gate.
+
+
+### Concurrent conversations (0.2.2)
+
+The optional `x-axiovela-project` request header (URI-encoded UTF-8 root) scopes a request to an explicitly
+opened root. Unknown roots return 409; job reads and cancellation reject jobs
+from another project. Legacy requests capture the last-opened project at request
+arrival. AsyncLocalStorage preserves that identity across asynchronous callbacks,
+including running providers and runner persistence, after the UI changes projects.
+Desktop forwards this fixed header through its authenticated protocol bridge.
+Resource URLs may use `workspace` for the same opened-root check.
+
+Assistant admission is exclusive per project/conversation, not per app. A second
+turn in the same conversation returns 409; different conversations run together.
+Filesystem mutations use a gate per project. Assistant admission and preference
+writes have separate, short gates; provider discovery happens before admission.
+Status, cancellation and capability discovery bypass filesystem gates, and each
+chat polls independently with a bounded request timeout. A slow upload or status
+request therefore cannot hold up unrelated providers or follow-ups. Selection and access are captured in each
+job. Updating provider credentials remains blocked while an assistant is active.
+`GET /api/assistant/activity` returns currently running in-memory jobs across
+opened projects, allowing renderer recovery without restarting providers.
+
+
+`lastActivityAt` is the timestamp of the latest observed provider activity,
+including repeated activity labels and scoped native turn events. The timeline
+remains deduplicated separately. A completed tool no longer leaves a “Running a
+project command” headline. Silence is reported as absence of provider activity,
+not as proof that execution has paused. `npm run parallel:smoke` includes a
+held-open upload, simultaneous admission, repeated activity and a deliberately
+unanswered status request while a different conversation drains its queue.
+Pi also forwards message deltas and tool execution updates to this timestamp,
+and reports tool completion separately from tool start. Its activity labels do
+not expose reasoning or command output. `npm run cli-provider:smoke` verifies
+these events without provider credentials; silence can still occur during a
+command or provider wait that emits no events.

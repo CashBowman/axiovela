@@ -165,11 +165,14 @@ try {
   const competingProjectRequest = fetch(`${base}/api/project/open`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({path: path.join(sandbox, 'competing-project'), create: true})});
   const [slowBibliographyResponse, assistantResponse, competingRunResponse, competingProjectResponse] = await Promise.all([slowBibliographyRequest, assistantRequest, competingRunRequest, competingProjectRequest]);
   if (!slowBibliographyResponse.ok) throw new Error(`in-flight bibliography write failed: ${slowBibliographyResponse.status}`);
-  if (competingRunResponse.status !== 409) throw new Error(`run admission was not blocked during project activation: ${competingRunResponse.status}`);
-  if (competingProjectResponse.status !== 409) throw new Error(`project activation was not exclusive: ${competingProjectResponse.status}`);
+  if (competingRunResponse.status !== 202) throw new Error(`captured-project run could not start: ${competingRunResponse.status}`);
+  const competingRun = await competingRunResponse.json();
+  if (competingRun.projectRoot !== createdPath) throw new Error('Queued request changed its project identity');
+  if (!competingProjectResponse.ok) throw new Error(`project could not open beside an assistant: ${competingProjectResponse.status}`);
   const assistantStarted = await assistantResponse.json();
   const expectedAssistantRoot = path.join(researchParent, 'regression_study');
   if (!assistantStarted.projectCreated || assistantStarted.projectRoot !== expectedAssistantRoot || assistantStarted.output) throw new Error(`assistant project routing or initial output failed: ${JSON.stringify(assistantStarted)}`);
+  await fetch(`${base}/api/project/open`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({path: expectedAssistantRoot, create: false})});
   const assistantRunning = await (await fetch(`${base}/api/assistant/${assistantStarted.id}`)).json();
   if (assistantRunning.output?.includes('private raw output') || 'diagnostics' in assistantRunning) throw new Error('assistant leaked streaming diagnostics');
   let assistantRecord = assistantRunning;
@@ -201,7 +204,7 @@ try {
   if (JSON.stringify(storedPreferences) !== JSON.stringify(preferences)) throw new Error('preferences were not persisted');
   if ((await choose('writing', {...writingSelection, effort: 'high'})).ok) throw new Error('unsupported effort accepted');
   const writingStarted = await (await fetch(`${base}/api/assistant`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({message: 'FIXTURE_STATE', role: 'writing', permissionMode: 'ask'})})).json();
-  if ((await choose('writing', writingSelection)).status !== 409) throw new Error('settings changed during an active task');
+  if (!(await choose('writing', writingSelection)).ok) throw new Error('Future-turn preferences could not change beside an active task');
   let writingRecord = writingStarted;
   for (let i = 0; i < 40 && writingRecord.status === 'running'; i++) {
     await new Promise(resolve => setTimeout(resolve, 50));

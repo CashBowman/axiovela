@@ -15,9 +15,11 @@
 
 ## Release and development
 
-- [Axiovela 0.2.0: downloads and validation](releases/0.2.0.md).
+- [Axiovela 0.2.2: downloads and validation](releases/0.2.2.md).
 - [Development setup](development-setup.md), [desktop packaging](desktop.md), and [release preparation](releasing.md).
 - [Mac signing and distribution](mac-distribution.md).
 - [Contributing](../CONTRIBUTING.md), [roadmap](roadmap.md), and [changelog](../CHANGELOG.md).
 - [Backend contract](runner-backend.md), [infrastructure](research-infrastructure.md), and [run schema](workbench-run.schema.json).
 - [Scientific integrity](scientific-integrity.md), [visualization guidance](visualization-guidelines.md), and [branding compatibility](branding.md).
+
+- [Parallel research and writing](parallel-chats.md).

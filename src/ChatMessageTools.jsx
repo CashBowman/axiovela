@@ -17,10 +17,10 @@ export function ChatTextarea(props) {
   useLayoutEffect(() => { const el = ref.current; el.style.height = '0px'; el.style.height = `${Math.min(el.scrollHeight, 300)}px`; }, [props.value]);
   return <textarea {...props} ref={ref} rows={1}/>;
 }
-export function ActivityAge({busy, events}) {
+export function ActivityAge({busy, events, lastActivityAt}) {
   const [now, setNow] = useState(Date.now());
   React.useEffect(() => { if (!busy) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [busy]);
-  const last = events.at(-1)?.at;
+  const last = lastActivityAt || events.at(-1)?.at;
   const seconds = last ? Math.max(0, Math.floor((now - Date.parse(last)) / 1000)) : 0;
-  return busy && seconds >= 15 ? <small role="status">Waiting for the next provider update · {seconds}s since last activity</small> : null;
+  return busy && seconds >= 15 ? <small role="status">No new provider activity for {seconds}s · task still running</small> : null;
 }

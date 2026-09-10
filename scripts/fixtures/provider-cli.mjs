@@ -21,6 +21,14 @@ if (args.includes('rpc')) {
       promptCount += 1;
       state.lastPrompt = request.message;
       if (request.message.includes('HANG')) continue;
+      if (request.message.includes('PI_PROGRESS')) {
+        send({type: 'tool_execution_start', toolCallId: 'progress', toolName: 'bash', args: {command: 'fixture-command'}});
+        send({type: 'tool_execution_update', toolCallId: 'progress', partialResult: {content: [{type: 'text', text: 'private command output'}]}});
+        send({type: 'tool_execution_end', toolCallId: 'progress', isError: false});
+        send({type: 'message_update', assistantMessageEvent: {type: 'thinking_delta', contentIndex: 0, delta: 'private reasoning'}});
+        send({type: 'message_update', assistantMessageEvent: {type: 'text_delta', contentIndex: 1, delta: 'Answer'}});
+        send({type: 'message_update', assistantMessageEvent: {type: 'text_delta', contentIndex: 1, delta: ' continues'}});
+      }
       if (request.message.includes('HERDR_ACTIVITY')) {
         send({type: 'tool_execution_start', toolCallId: 'start-workers', toolName: 'bash', args: {command: 'herdr agent start mf_12345678_linear && herdr agent start mf_12345678_sine'}});
         send({type: 'tool_execution_end', toolCallId: 'start-workers', isError: false});

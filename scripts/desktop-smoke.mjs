@@ -143,7 +143,7 @@ try {
   // isolated destination. Only the OS dialog is replaced, not project creation.
   await application.evaluate(({dialog}, folder) => { dialog.showOpenDialog = async () => ({canceled: false, filePaths: [folder]}); }, temporary);
   await application.evaluate(({Menu}) => Menu.getApplicationMenu().items.find(item => item.label === 'Help').submenu.items.find(item => item.label === 'Try the example study').click());
-  await page.waitForFunction(() => document.querySelector('.projectSwitcher')?.textContent.includes('A line or a constant?'), {timeout: 30000});
+  await page.waitForFunction(() => document.querySelector('.activeProjectTab')?.textContent.includes('A line or a constant?'), {timeout: 30000});
   const project = await page.evaluate(() => fetch('/api/project').then(r => r.json()));
   assert.ok(project.root.startsWith(temporary + path.sep));
   await page.getByRole('combobox', {name: 'Research focus', exact: true}).selectOption('data-science');
@@ -276,7 +276,7 @@ Axiovela packaged LaTeX: $\int_0^1 x^2\,dx=1/3$.
   const blank = path.join(temporary, 'New research project');
   await page.getByRole('textbox', {name: 'Project folder'}).fill(blank);
   await page.getByRole('button', {name: 'Open or create', exact: true}).click();
-  await page.waitForFunction(folder => document.querySelector('.projectSwitcher')?.textContent.includes(folder), 'New research project');
+  await page.waitForFunction(folder => document.querySelector('.activeProjectTab')?.textContent.includes(folder), 'New research project');
   assert.ok((await readdir(blank)).includes('workbench.project.json'));
   assert.ok(!(await readdir(blank)).includes('.git'));
   // Drop figures into the middle of a document, not at its end. Real textarea
@@ -445,7 +445,7 @@ Axiovela packaged LaTeX: $\int_0^1 x^2\,dx=1/3$.
   // A new process gets a new loopback port but the same stable application origin.
   application = await electron.launch({executablePath, args: packaged ? [] : [root], env, chromiumSandbox: true, timeout: 45000});
   const reopened = await application.firstWindow({timeout: 30000});
-  await reopened.waitForFunction(() => document.querySelector('.projectSwitcher')?.textContent.includes('New research project'));
+  await reopened.waitForFunction(() => document.querySelector('.activeProjectTab')?.textContent.includes('New research project'));
   assert.equal(await reopened.evaluate(() => localStorage.getItem('desktop-smoke-persistence')), 'saved');
   console.log('Desktop smoke: persistence passed; starting cancellation fixture');
   // Start an intentionally long local fixture to verify the close guard and the
@@ -471,7 +471,7 @@ Axiovela packaged LaTeX: $\int_0^1 x^2\,dx=1/3$.
   await writeFile(path.join(profile, 'tools.json'), `${JSON.stringify({LATEX: path.join(temporary, 'missing-tectonic.exe')}, null, 2)}\n`);
   application = await electron.launch({executablePath, args: packaged ? [] : [root], env, chromiumSandbox: true, timeout: 45000});
   const missingLatex = await application.firstWindow({timeout: 30000});
-  await missingLatex.waitForFunction(() => document.querySelector('.projectSwitcher')?.textContent.includes('New research project'));
+  await missingLatex.waitForFunction(() => document.querySelector('.activeProjectTab')?.textContent.includes('New research project'));
   await missingLatex.getByRole('button', {name: 'Write-up', exact: true}).click();
   await missingLatex.getByRole('button', {name: 'LaTeX', exact: true}).click();
   const latexEditor = missingLatex.getByRole('textbox', {name: 'Write-up source'});

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.2 (2026-09-10)
+
+- Run experiment and writing conversations concurrently across project tabs.
+- Keep follow-up queues ordered per conversation and active in background tabs.
+- Isolate status polling, project requests, and cancellation so one task does not block another.
+- Report Pi streaming progress and tool completion accurately.
+- Simplify the header with flat section navigation and visible background task counts.
+- Expand native build coverage to Linux and Windows ARM64 alongside x64 and both Mac architectures.
+- See [release notes](docs/releases/0.2.2.md).
+
 ## 0.2.0 (2026-09-09)
 
 - Add top-level project tabs, expanding chat drafts, collapsible prompts, message copying, and queued follow-ups.

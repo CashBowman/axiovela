@@ -47,6 +47,13 @@ try {
       }
       await assert.rejects(runAssistant({...options, selection: {...selection, profileId: '../../untrusted'}}), /research profile/);
       const activity = [];
+      let progressCount = 0;
+      const progressEvents = [], progressAtEvent = [];
+      await runAssistant({...options, prompt: 'PI_PROGRESS', onActivity: () => { progressCount++; }, onEvent: event => { progressEvents.push(event); progressAtEvent.push(progressCount); }});
+      assert.equal(progressCount, 8, 'Pi forwards tool progress, each repeated delta, final message and agent completion, without counting RPC responses');
+      assert.deepEqual(progressEvents.map(event => [event.kind, event.status]), [['tool', 'running'], ['tool', 'complete'], ['status', 'running'], ['status', 'running'], ['status', 'running']]);
+      assert.deepEqual(progressAtEvent, [1, 3, 4, 5, 6], 'tool output and repeated text deltas refresh liveness independently of timeline deduplication');
+      assert.ok(!JSON.stringify(progressEvents).includes('private'), 'activity labels do not expose tool output or reasoning');
       await runAssistant({...options, prompt: 'HERDR_ACTIVITY', onAgentActivity: updates => activity.push(...updates)});
       assert.deepEqual(activity.slice(-2), [{name: 'mf_12345678_linear', status: 'done'}, {name: 'mf_12345678_sine', status: 'done'}]);
       await assert.rejects(runAssistant({...options, mode: 'auto'}), /supports these/);

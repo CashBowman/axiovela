@@ -1,19 +1,28 @@
 # Beta feedback improvements
 
-Project tabs sit above the main toolbar. They remember opened projects on the
-same device; switching restores that project's unsent chat drafts during the
-current app session. Switching waits for the active assistant to finish. This
-release still serializes assistant tasks; independent concurrent worktrees are
-not implemented.
+Project tabs share the top strip with the Axiovela brand. Flat section navigation
+sits below, with dataset and layout actions on the right. Long project names
+stay on one line. Activity dots mark projects with running assistant tasks.
+
+Projects and conversations can run concurrently. Switching projects or sections
+does not stop a task. Experiment and writing assistants have independent task
+state, and New chat is available while another conversation runs. Stop affects
+only the visible conversation. A running project's tab cannot be closed.
+These conversations share their project's files; this is not worktree isolation
+or automatic merging of competing edits. Editor drafts retain their existing
+recovery and disk-conflict checks.
 
 Chat drafts grow up to 300 pixels before scrolling. Sent long prompts collapse
 with a Show full prompt control. Both prompt and response text can be copied.
-Messages entered during a run queue for the same project and conversation.
-Queued messages can be edited or removed, and dispatch when that conversation
-is active using its current settings. Stop or failure clears the queue. Queues
-are in memory, so close/reload discards them. This is follow-up queueing, not
-in-flight native model steering. Activity shows real provider events and the
-elapsed wait since the latest event, without inventing progress.
+Messages entered during a run queue for that conversation, retaining the model,
+access mode, research profile and attachment selected when submitted. Follow-ups
+continue while another conversation or project is visible. Edit or remove them
+in their owning conversation. Stop or failure clears only that conversation's
+queue. Queues are in memory, so close/reload discards unsent follow-ups; running
+jobs reconnect after renderer reload. This is follow-up queueing, not in-flight
+native model steering. Activity reports real provider events and elapsed quiet
+time, with repeated events refreshing the activity timestamp. Polling and
+cancellation remain available during unrelated filesystem operations. Provider limits still apply.
 
 Both assistants retrieve project evidence with their file tools as needed.
 Every turn retains permissions, research profiles, tracking/presentation rules,
@@ -41,6 +50,14 @@ Axiovela never accepts arbitrary renderer command text. Refresh connections
 after setup; custom locations can still use the executable picker.
 
 Verification: `node --test scripts/provider-setup.test.mjs`,
-`node scripts/beta-feedback-smoke.mjs`, and the existing release and desktop
+`node scripts/beta-feedback-smoke.mjs`, `npm run parallel:smoke`, and the existing release and desktop
 gates. Setup tests never install real providers or use real credentials. Run
 native Mac/Windows installer acceptance before marking new installers ready.
+
+
+The 0.2.2 concurrency work follows React’s guidance on
+[preserving state outside removed UI](https://react.dev/learn/preserving-and-resetting-state)
+and Electron’s guidance on
+[keeping long-running work off the UI thread](https://www.electronjs.org/docs/latest/tutorial/performance).
+Task ownership stays outside the visible chat pane; providers run in independent
+processes while the renderer polls their real activity.

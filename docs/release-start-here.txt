@@ -1,0 +1,20 @@
+AXIOVELA 0.2.2 — START HERE
+
+Download: https://github.com/CashBowman/axiovela/releases/tag/v0.2.2
+
+Choose your operating system and processor:
+- Mac M-series: darwin-arm64.dmg. Intel Mac: darwin-x64.dmg.
+- Windows Intel/AMD 64-bit: win32-x64-Setup.exe.
+- Windows ARM64: win32-arm64.zip (portable; extract completely, then run axiovela.exe).
+- Linux: linux-x64 or linux-arm64, matching your CPU. DEB/RPM installers and portable ZIPs are available.
+
+On Mac, open the DMG, copy Axiovela to Applications, eject the image, and launch from Applications.
+On Windows x64, run Setup.exe. On Linux, use the matching DEB/RPM package manager or extract the ZIP and run axiovela.
+Mac packages use ad-hoc signing and are not Apple-notarized. Windows packages are unsigned. Follow your OS approval process and device policy; do not disable security protections. Mac guidance: https://github.com/CashBowman/axiovela/blob/main/docs/mac-installation.md
+Windows ARM64 includes native ARM64 Electron; its bundled x64 Tectonic runs through Windows emulation.
+
+Save work, finish active tasks, and quit Axiovela before updating. Keep your research folders and existing profile. Installation is manual; verified in-app downloads are not enabled.
+
+Try Help > Try the example study. Connect your own AI provider below a chat composer. Run experiments and writing chats together, switch project tabs freely, or start another conversation. Queue follow-ups to continue in the background. Stop task affects only the selected chat. Chats in one project share files; give assistants distinct outputs.
+
+Read the release notes for validation results and SHA256SUMS.txt for artifact checksums. Retain backups of important work and review AI-generated code and claims.

@@ -181,6 +181,7 @@ export async function runAssistant(options) {
       if (!threadId || p.threadId !== threadId) return;
       if (!turnId) { if (pendingEvents.length < 256) pendingEvents.push(event); return; }
       if ((p.turnId || p.turn?.id) !== turnId) return;
+      options.onActivity?.();
       if (event.method === 'item/completed' && item.type === 'agentMessage') { output = item.text || output; onOutput(output); }
       if (event.method === 'item/agentMessage/delta') onEvent({kind: 'writing', label: 'Composing response', status: 'running'});
       if (['item/started', 'item/completed'].includes(event.method) && item.type !== 'agentMessage' && item.type !== 'reasoning' && item.type !== 'userMessage') {

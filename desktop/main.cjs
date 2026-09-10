@@ -91,7 +91,7 @@ async function proxyRequest(request) {
   const url = new URL(request.url);
   // Concatenate paths to a fixed origin. Never resolve //host as a new origin.
   const headers = {'x-methodflow-session': token, origin: 'methodflow://app'};
-  for (const name of ['content-type', 'range']) if (request.headers.has(name)) headers[name] = request.headers.get(name);
+  for (const name of ['content-type', 'range', 'x-axiovela-project']) if (request.headers.has(name)) headers[name] = request.headers.get(name);
   try {
     const response = await fetch(backendUrl + url.pathname + url.search, {
       method: request.method, headers, redirect: 'error', signal: request.signal,

@@ -46,6 +46,18 @@ for await (const line of readline.createInterface({input: process.stdin})) {
         event('item/started', {item: {type: 'commandExecution', command: 'private raw output'}});
         event('item/completed', {item: {type: 'fileChange'}});
         if (request.includes('FIXTURE_HANG')) return;
+        if (request.includes('FIXTURE_HEARTBEAT')) {
+          let count = 0;
+          const timer = setInterval(() => {
+            event('item/agentMessage/delta', {delta: '.'});
+            if (++count === 20) {
+              clearInterval(timer);
+              event('item/completed', {item: {type: 'agentMessage', text: 'Heartbeat complete'}});
+              event('turn/completed', {turn: {status: 'completed'}});
+            }
+          }, 100);
+          return;
+        }
         if (request.includes('FIXTURE_FAIL')) { event('turn/completed', {turn: {status: 'failed', error: {message: 'Fixture provider rejected this request'}}}); return; }
         const text = request.includes('FIXTURE_CHILD') ? 'Root completed and verified both demos' : request.includes('FIXTURE_LONG_CHAT') ? Array.from({length: 12}, (_, i) => `### Diagnostic ${i + 1}\n\nThis is a long conversation layout fixture, not a scientific finding. We inspect the recorded baseline and keep uncertainty separate from observations.\n\n- Sample size: **100**\n- Equation: \\(y = \\beta x + \\epsilon\\)\n- [Baseline diagnostic](artifacts/figures/nested/baseline.svg)\n\n\`\`\`python\nprint({"diagnostic": ${i + 1}, "status": "complete"})\n\`\`\``).join('\n\n') : request.includes('FIXTURE_PROMPT') ? JSON.stringify({prompt, ...session}) : request.includes('FIXTURE_CODE') ? '```powershell\nGet-Location\nGet-ChildItem\n```' : request.includes('FIXTURE_STATE') ? JSON.stringify({...session, turnEffort: p.effort}) : 'Created the project scaffold and recorded the requested research plan.';
         event('item/completed', {item: {type: 'agentMessage', text}});
