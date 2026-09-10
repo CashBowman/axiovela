@@ -41,4 +41,5 @@ try {
   await chmod(path.join(directory, filename), 0o755);
   await writeFile(path.join(directory, 'build.json'), JSON.stringify({version, target: `${process.platform}-${process.arch}`, url, sha256: target[1]}, null, 2) + '\n');
   console.log(`${version} verified and bundled.`);
-} finally { await rm(temporary, {recursive: true, force: true}); }
+// Windows emulation or antivirus can briefly retain a just-executed binary.
+} finally { await rm(temporary, {recursive: true, force: true, maxRetries: 10, retryDelay: 500}); }

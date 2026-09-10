@@ -39,7 +39,7 @@ The README and demo guide include reviewed screenshots of the reproducible examp
 
 ## Publish
 
-Use the [current release notes](releases/0.2.0.md). Tag the tested source and
+Use the [current release notes](releases/0.2.2.md). Tag the tested source and
 publish matching installers, validation records, and checksums. Axiovela's
 public source starts with the refined 0.2.0 snapshot; earlier development history
 is preserved in a private archive. Never push the archive's branches or tags to
