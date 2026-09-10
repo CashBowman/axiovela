@@ -11,9 +11,9 @@
 *The included synthetic regression study. The displayed measurements come from its reproducible experiment, with no AI account needed to run the example.*
 
 
-![Axiovela animated workflow: experiment results, figures, and manuscript generation](docs/assets/axiovela-demo.gif)
+![Axiovela workflow: configure an experiment, inspect its measured results, and generate a research write-up](docs/assets/axiovela-demo.gif)
 
-*Recorded workflow from an earlier interface revision; local output details are redacted. The current release adds the tabs and chat improvements described below.*
+*A short end-to-end product demo. [Watch the higher-quality MP4 version](docs/assets/axiovela-demo.mp4).*
 
 Axiovela keeps your code, data, figures, citations, and writing together in ordinary project files on your computer. Connect your AI provider, guide the work, and review the evidence at each step.
 
@@ -82,4 +82,3 @@ For the standalone, dependency-free example, run `node examples/linear-regressio
 [Roadmap](docs/roadmap.md) · [Contributing](CONTRIBUTING.md) · [Troubleshooting](docs/troubleshooting.md) · [Changelog](CHANGELOG.md)
 
 Free to use, modify, and share under the [MIT License](LICENSE), without warranty and subject to its liability disclaimer. Read the [beta notice](BETA_NOTICE.md) before use. Existing projects and the `methodflow` and `ml-workbench` commands remain compatible. [Branding and compatibility](docs/branding.md)
-

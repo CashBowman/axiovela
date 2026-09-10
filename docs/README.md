@@ -6,6 +6,7 @@
 
 - [Get started](quick-start.md): installation, projects, and AI connections.
 - [Features](features.md) and [research walkthrough](demo.md).
+- [Product demo](assets/axiovela-demo.mp4): a high-quality end-to-end workflow preview.
 - [Provider connections](model-tools.md) and [research profiles](research-profiles.md).
 - [Example study](../examples/linear-regression/README.md).
 - [Manuscripts and evidence](research-workspace.md).
