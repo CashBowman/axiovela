@@ -3,6 +3,11 @@ name: Validate retained installers
 on:
   workflow_dispatch:
     inputs:
+      runner:
+        description: Platform to validate (all includes both Mac architectures on Tahoe)
+        type: choice
+        default: all
+        options: [all, ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15, macos-15-intel]
       build_run:
         description: Desktop release run containing the installer artifacts
         required: true
@@ -17,23 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            artifact: Axiovela-desktop-ubuntu-latest
-          - os: ubuntu-24.04-arm
-            artifact: Axiovela-desktop-ubuntu-24.04-arm
-          - os: windows-latest
-            artifact: Axiovela-desktop-windows-latest
-          - os: windows-11-arm
-            artifact: Axiovela-desktop-windows-11-arm
-          - os: macos-15
-            artifact: Axiovela-desktop-macos-15
-          - os: macos-15-intel
-            artifact: Axiovela-desktop-macos-15-intel
-          - os: macos-26
-            artifact: Axiovela-desktop-macos-15
-          - os: macos-26-intel
-            artifact: Axiovela-desktop-macos-15-intel
+        include: ${{ fromJSON(inputs.runner && inputs.runner != 'all' && format('[{{"os":"{0}","artifact":"Axiovela-desktop-{0}"}}]', inputs.runner) || '[{"os":"ubuntu-latest","artifact":"Axiovela-desktop-ubuntu-latest"},{"os":"ubuntu-24.04-arm","artifact":"Axiovela-desktop-ubuntu-24.04-arm"},{"os":"windows-latest","artifact":"Axiovela-desktop-windows-latest"},{"os":"windows-11-arm","artifact":"Axiovela-desktop-windows-11-arm"},{"os":"macos-15","artifact":"Axiovela-desktop-macos-15"},{"os":"macos-15-intel","artifact":"Axiovela-desktop-macos-15-intel"},{"os":"macos-26","artifact":"Axiovela-desktop-macos-15"},{"os":"macos-26-intel","artifact":"Axiovela-desktop-macos-15-intel"}]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 40
     steps:

@@ -146,7 +146,7 @@ try {
   const encoder = new TextEncoder();
   const slowBibliographyRequest = fetch(`${base}/api/bibliography`, {
     method: 'PUT',
-    headers: {'content-type': 'application/json'},
+    headers: {'content-type': 'application/json', 'x-axiovela-project': encodeURIComponent(createdPath)},
     body: new ReadableStream({
       start(controller) {
         controller.enqueue(encoder.encode(delayedBody.slice(0, 12)));
@@ -159,10 +159,10 @@ try {
     duplex: 'half',
   });
   await new Promise(resolve => setTimeout(resolve, 10));
-  const assistantRequest = fetch(`${base}/api/assistant`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({message: `create a new project under ${path.join(sandbox, 'cloud drive', 'documents', 'math research')} called "regression_study."`, permissionMode: 'full'})});
+  const assistantRequest = fetch(`${base}/api/assistant`, {method: 'POST', headers: {'content-type': 'application/json', 'x-axiovela-project': encodeURIComponent(createdPath)}, body: JSON.stringify({message: `create a new project under ${path.join(sandbox, 'cloud drive', 'documents', 'math research')} called "regression_study."`, permissionMode: 'full'})});
   await new Promise(resolve => setTimeout(resolve, 10));
-  const competingRunRequest = fetch(`${base}/api/runs`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({commandId: 'seed-matched-comparison', approvalToken: competingApproval.approvalToken})});
-  const competingProjectRequest = fetch(`${base}/api/project/open`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({path: path.join(sandbox, 'competing-project'), create: true})});
+  const competingRunRequest = fetch(`${base}/api/runs`, {method: 'POST', headers: {'content-type': 'application/json', 'x-axiovela-project': encodeURIComponent(createdPath)}, body: JSON.stringify({commandId: 'seed-matched-comparison', approvalToken: competingApproval.approvalToken})});
+  const competingProjectRequest = fetch(`${base}/api/project/open`, {method: 'POST', headers: {'content-type': 'application/json', 'x-axiovela-project': encodeURIComponent(createdPath)}, body: JSON.stringify({path: path.join(sandbox, 'competing-project'), create: true})});
   const [slowBibliographyResponse, assistantResponse, competingRunResponse, competingProjectResponse] = await Promise.all([slowBibliographyRequest, assistantRequest, competingRunRequest, competingProjectRequest]);
   if (!slowBibliographyResponse.ok) throw new Error(`in-flight bibliography write failed: ${slowBibliographyResponse.status}`);
   if (competingRunResponse.status !== 202) throw new Error(`captured-project run could not start: ${competingRunResponse.status}`);

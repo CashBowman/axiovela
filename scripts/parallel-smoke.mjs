@@ -54,7 +54,7 @@ try {
   assert.equal(running.length, 3, 'three tasks overlap across two projects');
   assert.equal((await api(`/api/assistant/${experimentJob.id}`, second)).status, 404, 'wrong project cannot read a job');
   assert.equal((await api(`/api/assistant/${experimentJob.id}`, first)).body.status, 'running', 'hidden project still runs');
-  await page.locator(`.projectTabs button[title="${first}"]`).click();
+  await page.locator('.projectTabs').getByTitle(first, {exact: true}).click();
   await page.getByRole('button', {name: 'Write-up', exact: true}).click();
   await page.getByRole('button', {name: 'Stop task'}).click();
   await page.getByRole('button', {name: 'Stop task'}).waitFor({state: 'hidden'});
@@ -87,7 +87,7 @@ try {
   const composer = page.getByRole('textbox', {name: 'Experiment Chatbot message'});
   await composer.fill('Second background chain turn');
   await page.getByRole('button', {name: 'Queue message', exact: true}).click();
-  await page.locator(`.projectTabs button[title="${second}"]`).click();
+  await page.locator('.projectTabs').getByTitle(second, {exact: true}).click();
   const deadline = Date.now() + 12000;
   while (!(await api('/api/assistant?allConversations=1', first)).body.jobs.some(r => r.message === 'Second background chain turn' && r.status === 'complete')) {
     assert.ok(Date.now() < deadline, 'Hidden queued turn did not complete');
