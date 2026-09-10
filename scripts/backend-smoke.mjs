@@ -249,7 +249,7 @@ try {
   if (invalidProfile.ok) throw new Error('arbitrary profile path was accepted');
   const cancelStarted = await (await fetch(`${base}/api/assistant`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({message: 'Inspect the project, then summarize it.', permissionMode: 'ask'})})).json();
   const cancelResponse = await (await fetch(`${base}/api/assistant/${cancelStarted.id}/cancel`, {method: 'POST'})).json();
-  if (cancelResponse.status !== 'canceled' || !cancelResponse.events.some(event => event.label === 'Cancellation requested')) throw new Error(`assistant cancellation was not explicit: ${JSON.stringify(cancelResponse)}`);
+  if (cancelResponse.status !== 'canceled' || !cancelResponse.events.some(event => event.kind === 'cancel' && event.status === 'running') || !cancelResponse.events.some(event => event.label === 'Task canceled' && event.status === 'canceled')) throw new Error(`assistant cancellation was not explicit: ${JSON.stringify(cancelResponse)}`);
   await new Promise(resolve => setTimeout(resolve, 180));
   const canceledRecord = await (await fetch(`${base}/api/assistant/${cancelStarted.id}`)).json();
   if (canceledRecord.status !== 'canceled' || canceledRecord.output) throw new Error(`canceled assistant returned an unexpected final response: ${JSON.stringify(canceledRecord)}`);
