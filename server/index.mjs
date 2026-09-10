@@ -52,6 +52,7 @@ const jobs = new Map();
 const assistantJobs = new Map();
 const recordPersistence = new WeakMap();
 const assistantPersistence = new WeakMap();
+const assistantCompletions = new WeakMap();
 const allowedVisuals = ['Primary error curve', 'Residual heatmap', 'Uncertainty bars', 'Seed scatter'];
 const commandManifest = {
   'seed-matched-comparison': {
@@ -1154,25 +1155,26 @@ async function startAssistant(body) {
       await persistAssistantRecord(record);
     },
     onActivity: () => { if (record.status === 'running') record.lastActivityAt = new Date().toISOString(); },
-    onOutput: text => { if (record.status === 'running') { if (record.output !== text.slice(-64000)) record.lastActivityAt = new Date().toISOString(); record.output = text.slice(-64000); } },
-    onEvent: event => { if (record.status === 'running') void appendAssistantEvent(record, event).catch(() => {}); },
+    onOutput: text => { if (record.status === 'running' && !record.controller?.signal.aborted) { if (record.output !== text.slice(-64000)) record.lastActivityAt = new Date().toISOString(); record.output = text.slice(-64000); } },
+    onEvent: event => { if (record.status === 'running' && !record.controller?.signal.aborted) void appendAssistantEvent(record, event).catch(() => {}); },
   });
-  void (async () => {
+  const completion = (async () => {
     try {
       const text = await assistantRun;
       if (activityTimer) clearInterval(activityTimer);
       await refreshAgenticActivity(true);
-      if (record.status === 'running') { record.status = 'complete'; record.output = text.slice(-64000); }
+      if (record.status === 'running') { record.status = record.controller?.signal.aborted ? 'canceled' : 'complete'; record.output = record.status === 'canceled' ? '' : text.slice(-64000); }
     } catch (error) {
       if (activityTimer) clearInterval(activityTimer);
       await refreshAgenticActivity(true);
-      if (record.status === 'running') { record.status = 'failed'; record.error = error.message; }
+      if (record.status === 'running') { record.status = record.controller?.signal.aborted ? 'canceled' : 'failed'; record.error = record.status === 'canceled' ? null : error.message; }
     } finally {
       if (activityTimer) clearInterval(activityTimer);
       record.completedAt = new Date().toISOString(); delete record.controller;
       await appendAssistantEvent(record, {kind: record.status, label: record.status === 'complete' ? 'Task complete' : record.status === 'canceled' ? 'Task canceled' : 'Task failed', status: record.status});
     }
   })().catch(() => {});
+  assistantCompletions.set(record, completion);
   return sanitizeAssistant(record);
   } finally { releaseAdmission(); }
 }
@@ -1321,13 +1323,12 @@ async function handleProjectRequest(req, res) {
       if (record.child) {
         stopProcess(record.child);
       }
-      record.status = 'canceled';
       record.output = '';
-      record.stage = 'Cancellation requested';
       record.error = null;
-      record.completedAt = new Date().toISOString();
-      await appendAssistantEvent(record, {kind: 'cancel', label: 'Cancellation requested', status: 'canceled'});
-      await persistAssistantRecord(record);
+      // Keep the conversation busy until the provider process has actually
+      // closed. Otherwise polling enables Send while admission still owns it.
+      await appendAssistantEvent(record, {kind: 'cancel', label: 'Stopping task; waiting for provider shutdown', status: 'running'});
+      await assistantCompletions.get(record);
       return json(res, 200, sanitizeAssistant(record));
     }
     if (req.method === 'POST' && url.pathname === '/api/git/preview') return json(res, 200, await gitPreview(await parseBody(req)));

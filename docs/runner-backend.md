@@ -76,3 +76,5 @@ and reports tool completion separately from tool start. Its activity labels do
 not expose reasoning or command output. `npm run cli-provider:smoke` verifies
 these events without provider credentials; silence can still occur during a
 command or provider wait that emits no events.
+
+Cancellation keeps a conversation running with a stopping status until its provider process closes. The Stop response and terminal status are published only after cleanup, so an immediate subsequent prompt cannot race the old session owner. Other conversations remain independent.

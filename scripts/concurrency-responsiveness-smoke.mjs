@@ -36,6 +36,9 @@ try {
   assert.equal(writer.status, 'running', 'a second assistant starts despite an unrelated file operation');
   assert.equal((await request('/api/project', second)).data.root, second, 'another project remains responsive');
   assert.equal((await request(`/api/assistant/${writer.id}/cancel`, first, {})).data.status, 'canceled', 'stop bypasses slow filesystem work');
+  const restarted = await request('/api/assistant', first, {...body, role: 'writing', conversationId: writer.conversationId});
+  assert.equal(restarted.status, 202, 'a completed Stop response permits the next turn immediately');
+  await request(`/api/assistant/${restarted.data.id}/cancel`, first, {});
   assert.equal((await request(`/api/assistant/${running.id}`, first)).data.status, 'running');
   releaseUpload(); releaseUpload = null; assert.equal((await upload).status, 200);
   const newChat = (await request('/api/assistant/conversations', first, {role: 'experiment'})).data.conversation;
