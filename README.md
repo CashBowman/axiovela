@@ -6,14 +6,9 @@
 
 <p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.1">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.1">Release notes</a></p>
 
-![Axiovela Results: recorded measurements, evidence summary, and experiment figure](docs/assets/axiovela-results.jpg)
-
-*The included synthetic regression study. The displayed measurements come from its reproducible experiment, with no AI account needed to run the example.*
-
-
 ![Axiovela workflow: configure an experiment, inspect its measured results, and generate a research write-up](docs/assets/axiovela-demo.gif)
 
-*A short end-to-end product demo. [Watch the higher-quality MP4 version](docs/assets/axiovela-demo.mp4).*
+*A short end-to-end product demo.*
 
 Axiovela keeps your code, data, figures, citations, and writing together in ordinary project files on your computer. Connect your AI provider, guide the work, and review the evidence at each step.
 

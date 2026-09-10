@@ -11,7 +11,7 @@ The screenshot uses the included synthetic example. Its recorded measurements an
 
 ![Axiovela workflow: configure an experiment, inspect its measured results, and generate a research write-up](assets/axiovela-demo.gif)
 
-*The product workflow from an empty study brief to recorded results and a generated write-up. [Watch the higher-quality MP4 version](assets/axiovela-demo.mp4).*
+*The product workflow from an empty study brief to recorded results and a generated write-up.*
 
 This guided AI demo produces real evidence rather than loading canned results. It requires a configured CLI account; the numerical experiment can use Python's standard library. Model responses and completion time vary.
 
