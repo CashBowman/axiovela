@@ -20,6 +20,12 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact: Axiovela-desktop-ubuntu-latest
+          - os: ubuntu-24.04-arm
+            artifact: Axiovela-desktop-ubuntu-24.04-arm
+          - os: windows-latest
+            artifact: Axiovela-desktop-windows-latest
+          - os: windows-11-arm
+            artifact: Axiovela-desktop-windows-11-arm
           - os: macos-15
             artifact: Axiovela-desktop-macos-15
           - os: macos-15-intel
@@ -29,7 +35,7 @@ jobs:
           - os: macos-26-intel
             artifact: Axiovela-desktop-macos-15-intel
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
         with:
@@ -47,11 +53,19 @@ jobs:
           name: ${{ matrix.artifact }}
           path: out/make
       - name: Verify original installer checksums
-        run: shasum -a 256 -c SHA256SUMS-*.txt
-        working-directory: out/make
+        run: node scripts/verify-desktop-checksums.mjs
+      - name: Extract the saved Windows portable app
+        if: runner.os == 'Windows'
+        shell: bash
+        run: node --input-type=module -e "import extract from 'extract-zip'; import path from 'node:path'; await extract(path.resolve('out/make/zip/win32/' + process.arch + '/Axiovela-win32-' + process.arch + '-0.2.2.zip'), {dir:path.resolve('out/Axiovela-win32-' + process.arch)});"
+      - name: Test the saved Windows application
+        if: runner.os == 'Windows'
+        env:
+          HYPOTERA_TEST_LATEX: '1'
+        run: npm run desktop:smoke -- --packaged
       - name: Install the saved Linux DEB
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y xvfb ./out/make/deb/x64/*.deb
+        run: sudo apt-get update && sudo apt-get install -y xvfb ./out/make/deb/*/*.deb
       - name: Test the installed Linux app with its system sandbox helper
         if: runner.os == 'Linux'
         env:
@@ -68,8 +82,24 @@ jobs:
           HYPOTERA_TEST_LATEX: '1'
         run: node scripts/desktop-dmg-smoke.mjs
       - name: Test chat, project tabs, copying, setup boundaries, and PDF export
-        if: runner.os == 'macOS'
+        if: runner.os != 'Linux'
         run: npm run beta:feedback:smoke
+      - name: Test concurrent chats (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run parallel:smoke
+      - name: Test concurrent chats (Mac/Windows)
+        if: runner.os != 'Linux'
+        run: npm run parallel:smoke
+      - name: Test Windows recovery
+        if: runner.os == 'Windows'
+        run: npm run desktop:recovery:smoke
+      - name: Retain isolated test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test-diagnostics-${{ matrix.os }}
+          path: .local/parallel-0.2.2/
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         if: always() && runner.os == 'macOS'
         with:

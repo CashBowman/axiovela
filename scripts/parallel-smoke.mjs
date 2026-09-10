@@ -20,6 +20,7 @@ const second = path.join(tmp, 'dashboard_development_testing_2_β');
 try {
   app = await electron.launch({executablePath: electronBinary, args: [root], env, chromiumSandbox: false});
   page = await app.firstWindow(); page.setDefaultTimeout(20000); page.on('pageerror', error => errors.push(error.message)); await page.waitForLoadState();
+  await page.waitForFunction(() => document.querySelector('select[aria-label="Conversation"]')?.disabled === false);
   const api = (url, project, body) => page.evaluate(async ({url, project, body}) => {
     const response = await fetch(url, {method: body ? 'POST' : 'GET', headers: {'content-type': 'application/json', ...(project ? {'x-axiovela-project': encodeURIComponent(project)} : {})}, ...(body ? {body: JSON.stringify(body)} : {})});
     return {status: response.status, body: await response.json()};
@@ -32,7 +33,9 @@ try {
   };
   const send = async (role, message) => {
     await page.getByRole('textbox', {name: `${role} message`}).fill(message);
+    const started = page.waitForResponse(response => new URL(response.url()).pathname === '/api/assistant' && response.request().method() === 'POST');
     await page.getByRole('button', {name: 'Send', exact: true}).click();
+    assert.equal((await started).status(), 202, 'provider task is admitted before checking overlap');
     await page.getByRole('button', {name: 'Stop task'}).waitFor();
   };
   await open(first);
@@ -77,7 +80,9 @@ try {
   await page.waitForFunction(() => window.delayedStatusCount > 0);
   // New conversations remain available while another conversation is busy.
   await page.getByRole('button', {name: 'Results', exact: true}).click();
+  const previousConversation = await page.getByRole('combobox', {name: 'Conversation', exact: true}).inputValue();
   await page.getByRole('button', {name: 'New chat', exact: true}).click();
+  await page.waitForFunction(previous => { const select = document.querySelector('select[aria-label="Conversation"]'); return select && !select.disabled && select.value !== previous; }, previousConversation);
   await send('Experiment Chatbot', 'First background chain turn');
   const composer = page.getByRole('textbox', {name: 'Experiment Chatbot message'});
   await composer.fill('Second background chain turn');
@@ -105,5 +110,6 @@ try {
 } catch (error) {
   await page?.screenshot({path: path.join(evidence, 'parallel-failure.png')}).catch(() => {});
   await writeFile(path.join(evidence, 'parallel-failure.txt'), JSON.stringify({error: error.stack, pageErrors: errors, body: await page?.locator('body').innerText().catch(() => '')}, null, 2));
+  console.error(await readFile(path.join(evidence, 'parallel-failure.txt'), 'utf8'));
   throw error;
 } finally { await app?.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response: 1}); }).catch(() => {}); await app?.close(); await rm(tmp, {recursive: true, force: true}); }

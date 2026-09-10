@@ -11,12 +11,13 @@ const home = path.join(tmp, 'home'); await mkdir(home);
 const env = {...process.env, APPDATA: path.join(home, 'AppData/Roaming'), LOCALAPPDATA: path.join(home, 'AppData/Local'), TECTONIC_CACHE_DIR: path.join(home, 'tectonic-cache'), HOME: home, USERPROFILE: home, AXIOVELA_DESKTOP_PROFILE: path.join(tmp, 'profile'), XDG_CONFIG_HOME: home, XDG_CACHE_HOME: home};
 for (const directory of [env.APPDATA, env.LOCALAPPDATA, env.TECTONIC_CACHE_DIR]) await mkdir(directory, {recursive: true});
 for (const key of Object.keys(env)) if (/^(WORKBENCH_|OPENAI_|ANTHROPIC_|GEMINI_|GOOGLE_|AZURE_|ELECTRON_RUN_AS_NODE$|NODE_OPTIONS$)/.test(key)) delete env[key];
-await writeFile(path.join(tmp, 'codex.mjs'), (await readFile('scripts/fixtures/assistant-rpc.mjs', 'utf8')).replace('}, 140);', '}, 1200);'));
+await writeFile(path.join(tmp, 'codex.mjs'), (await readFile('scripts/fixtures/assistant-rpc.mjs', 'utf8')).replace('}, 140);', '}, 5000);'));
 env.WORKBENCH_CODEX_PATH = path.join(tmp, 'codex.mjs');
 let app;
 try {
   app = await electron.launch({executablePath: electronBinary, args: [root], env, chromiumSandbox: false});
-  const page = await app.firstWindow(); page.setDefaultTimeout(15000); await page.waitForLoadState();
+  const page = await app.firstWindow(); page.setDefaultTimeout(30000); await page.waitForLoadState();
+  await page.waitForFunction(() => document.querySelector('select[aria-label="Conversation"]')?.disabled === false);
   await page.getByRole('button', {name: 'Project', exact: true}).click();
   await page.getByRole('textbox', {name: 'Project folder'}).fill(path.join(tmp, 'project-one'));
   await page.getByRole('button', {name: 'Open or create', exact: true}).click();
