@@ -1,6 +1,11 @@
 # Changelog
 
-## 0.2.3
+## 0.2.4
+
+- Fix GitHub update discovery returning HTTP 415 by requesting the release list as JSON, while retaining binary headers for installer downloads.
+- Supersedes withdrawn 0.2.3. Install 0.2.4 manually once to bootstrap working verified updates.
+
+## 0.2.3 (withdrawn)
 
 - Enable signed update downloads with a pinned release key and select only available formats for each architecture. Older installations require a manual bootstrap update.
 - Distinguish quiet Pi/tool/worker waits from an actual status connection failure.

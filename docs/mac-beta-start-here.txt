@@ -1,11 +1,11 @@
-AXIOVELA 0.2.3 — APPLE SILICON
+AXIOVELA 0.2.4 — APPLE SILICON
 Ad-hoc signed; not notarized.
 For Macs with an Apple M-series chip, running macOS 13 or later
 
 INSTALL
-Download Axiovela-0.2.3-darwin-arm64.dmg from the link supplied by the maintainer.
+Download Axiovela-0.2.4-darwin-arm64.dmg from the link supplied by the maintainer.
 Quit any older Hypotera or Axiovela app first. Open the DMG, drag Axiovela into Applications,
-and open it from Applications. Confirm Help → About Axiovela shows 0.2.3.
+and open it from Applications. Confirm Help → About Axiovela shows 0.2.4.
 Remove the old Hypotera.app from Applications after installing Axiovela.
 Keep your project backups. Updating the app does not require deleting your profile.
 

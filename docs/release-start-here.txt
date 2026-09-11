@@ -1,6 +1,6 @@
-AXIOVELA 0.2.3 — START HERE
+AXIOVELA 0.2.4 — START HERE
 
-Download: https://github.com/CashBowman/axiovela/releases/tag/v0.2.3
+Download: https://github.com/CashBowman/axiovela/releases/tag/v0.2.4
 
 Choose your operating system and processor:
 - Mac M-series: darwin-arm64.dmg. Intel Mac: darwin-x64.dmg.

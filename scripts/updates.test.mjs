@@ -158,3 +158,20 @@ test('publisher signs exact local artifacts with the pinned key and refuses repl
     assert.notEqual(result.status, 0); assert.match(result.stderr, /Pin this release public key/);
   } finally { await rm(root, {recursive: true, force: true}); }
 });
+
+
+test('GitHub release discovery requests JSON while asset redirects request binary data', async () => {
+  const seen = [];
+  const fetcher = async (url, {headers}) => {
+    seen.push({url, accept: headers.Accept});
+    if (url.startsWith('https://api.github.com/')) {
+      return headers.Accept === 'application/vnd.github+json' ? Response.json([]) : new Response('', {status: 415});
+    }
+    assert.equal(headers.Accept, 'application/octet-stream');
+    if (url.startsWith('https://github.com/')) return new Response(null, {status: 302, headers: {location: 'https://release-assets.githubusercontent.com/fixture.zip'}});
+    return new Response(bytes);
+  };
+  assert.deepEqual(await (await request('https://api.github.com/repos/CashBowman/axiovela/releases', {fetcher})).json(), []);
+  assert.deepEqual(Buffer.from(await (await request('https://github.com/CashBowman/axiovela/releases/download/v0.2.1/fixture.zip', {fetcher})).arrayBuffer()), bytes);
+  assert.deepEqual(seen.map(v => v.accept), ['application/vnd.github+json', 'application/octet-stream', 'application/octet-stream']);
+});

@@ -63,7 +63,7 @@ async function request(url, {fetcher = fetch, signal} = {}) {
   for (let i = 0; i < 6; i++) {
     const u = new URL(url);
     if (u.protocol !== 'https:' || u.username || u.password || u.port || !['github.com', 'api.github.com', 'release-assets.githubusercontent.com', 'objects.githubusercontent.com'].includes(u.hostname)) throw new Error('Untrusted update host.');
-    const response = await fetcher(u.href, {signal, redirect: 'manual', headers: {'User-Agent': 'Axiovela-update-check', Accept: 'application/octet-stream'}});
+    const response = await fetcher(u.href, {signal, redirect: 'manual', headers: {'User-Agent': 'Axiovela-update-check', Accept: u.hostname === 'api.github.com' ? 'application/vnd.github+json' : 'application/octet-stream'}});
     if ([301, 302, 303, 307, 308].includes(response.status)) { await response.body?.cancel(); url = new URL(response.headers.get('location'), url).href; continue; }
     if (!response.ok) { await response.body?.cancel(); throw new Error(`Update service unavailable (${response.status}). Try again later.`); }
     return response;

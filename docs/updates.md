@@ -1,6 +1,6 @@
 # Application updates
 
-Version 0.2.3 provides **guided updates** with signed, verified downloads. Installation remains manual. Versions through 0.2.2 have no pinned update key: install 0.2.3 manually once to bootstrap verification.
+Version 0.2.4 provides **guided updates** with signed, verified downloads. Installation remains manual. Versions through 0.2.2 have no pinned update key, and withdrawn 0.2.3 has a GitHub discovery header error: install 0.2.4 manually once to bootstrap verification.
 Packaging, signing defaults, application IDs, aliases, and research formats are
 unchanged. Do not describe it as a production-ready cross-platform automatic
 updater: native installer upgrades and recovery have not been validated by this
@@ -26,7 +26,7 @@ that window. Version tags are `vX.Y.Z` or `vX.Y.Z-beta.N`; build metadata is not
 supported. The original `0.2.0` must be followed by a greater version, e.g.
 `0.2.1-beta.1`, not `0.2.0-beta.20`.
 
-The panel shows the version and plain-text notes (no executable HTML). With the 0.2.3 pinned public key and matching signed release metadata,
+The panel shows the version and plain-text notes (no executable HTML). With the 0.2.4 pinned public key and matching signed release metadata,
 **Download update** streams the chosen platform/architecture/format with progress,
 **Cancel download**, and retry. Cancellation/failure removes that operation's
 partial file; retries start from zero. Concurrent checks/downloads/channel changes
@@ -114,7 +114,7 @@ or distro package trust. The app never disables those protections.
 
 Public GitHub Releases host metadata and files without a new server/service.
 An unauthenticated repository API check on September 9, 2026 returned HTTP 200
-and `visibility: public` for `CashBowman/axiovela`. Release 0.2.3 publishes signed metadata for its exact artifacts; public repository visibility alone does not enable verification in older builds.
+and `visibility: public` for `CashBowman/axiovela`. Release 0.2.4 publishes signed metadata for its exact artifacts; public repository visibility alone does not enable verification in older builds.
 Checks disclose the ordinary network IP and user agent to GitHub, plus a fixed
 repository request, not project paths, credentials, or research. No GitHub token
 is shipped or read by the updater. A private repository, draft release, offline

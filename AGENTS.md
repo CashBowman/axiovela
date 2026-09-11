@@ -15,7 +15,7 @@ When updating this file, preserve this bar for all agents and keep entries conci
 
 ## Project notes
 
-- Guided updates: `desktop/updates.cjs` and `docs/updates.md`. Native installation is intentionally unavailable with the current signing/distribution constraints. Never add install-on-quit or an unattended replacement path. `npm run updates:test` and `npm run updates:smoke` use isolated fixtures; local `updates:publish` uploads to an existing GitHub draft without dispatching builds. Provision a real pinned public key before claiming verified downloads work in shipped builds.
+- Guided updates: `desktop/updates.cjs` and `docs/updates.md`. Native installation is intentionally unavailable with the current signing/distribution constraints. Never add install-on-quit or an unattended replacement path. `npm run updates:test` and `npm run updates:smoke` use isolated fixtures; local `updates:publish` uploads to an existing GitHub draft without dispatching builds. The production public key is pinned in `desktop/update-config.json`; keep its private key outside Git. GitHub release-list requests require JSON Accept headers (binary Accept returns HTTP 415). Validate discovery against the live public API as well as isolated fixtures.
 
 - Final Mac bundles need a fresh signature after packaging; ad-hoc integrity is separate from Gatekeeper trust. `scripts/mac-trust-report.mjs` and `scripts/desktop-dmg-smoke.mjs` preserve policy failures and check the installed seal. A passing desktop job is not distribution approval when the saved policy assessment rejects the app. `npm run desktop:verify:mac` is the separate mandatory distribution gate; see `docs/mac-distribution.md`.
 
