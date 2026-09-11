@@ -54,8 +54,13 @@ try {
       assert.deepEqual(progressEvents.map(event => [event.kind, event.status]), [['tool', 'running'], ['tool', 'complete'], ['status', 'running'], ['status', 'running'], ['status', 'running']]);
       assert.deepEqual(progressAtEvent, [1, 3, 4, 5, 6], 'tool output and repeated text deltas refresh liveness independently of timeline deduplication');
       assert.ok(!JSON.stringify(progressEvents).includes('private'), 'activity labels do not expose tool output or reasoning');
-      await runAssistant({...options, prompt: 'HERDR_ACTIVITY', onAgentActivity: updates => activity.push(...updates)});
+      let workerProgress = 0;
+      const workerEvents = [];
+      await runAssistant({...options, mode: 'full', prompt: 'HERDR_ACTIVITY', onActivity: () => { workerProgress++; }, onEvent: event => workerEvents.push(event), onAgentActivity: updates => activity.push(...updates)});
       assert.deepEqual(activity.slice(-2), [{name: 'mf_12345678_linear', status: 'done'}, {name: 'mf_12345678_sine', status: 'done'}]);
+      assert.equal(workerProgress, 10, 'Pi Agentic mode forwards worker lifecycle, repeated wait output, and completion activity');
+      assert.ok(workerEvents.some(event => event.label === 'Waiting for Pi workers to finish'));
+      assert.ok(!JSON.stringify(workerEvents).includes('private worker output'));
       await assert.rejects(runAssistant({...options, mode: 'auto'}), /supports these/);
     }
     if (['claude', 'gemini'].includes(id)) assert.equal(effective.modelId, 'reported-model');

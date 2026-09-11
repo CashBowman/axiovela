@@ -24,7 +24,7 @@ import {graphicDirectories, resolveLatexGraphic} from './latex-graphics.mjs';
 import {projectRetrievalContext, attachedFigureContext} from './project-evidence.mjs';
 import {conversationIdFor, listConversations, createConversation, selectConversation, conversationContext} from './assistant-conversations.mjs';
 import {researchProfiles, profileId, profileInstructions, canResumeProfile} from './research-profiles.mjs';
-import {discoverAgenticMode, ensureAgenticMode, agenticOrchestratorPrompt, agenticWorkerPrefix, readAgenticActivity, mergeAgenticActivity} from './agentic-mode.mjs';
+import {discoverAgenticMode, ensureAgenticMode, agenticOrchestratorPrompt, agenticWorkerPrefix, readAgenticActivity, mergeAgenticActivity, monitorAgenticActivity} from './agentic-mode.mjs';
 import {containedProjectPath} from './project-paths.mjs';
 import {localServerConfig} from './local-server-config.mjs';
 import {stopProcess} from './assistant-process.mjs';
@@ -1116,25 +1116,19 @@ async function startAssistant(body) {
   const tectonic = latexExecutable();
   if (existsSync(tectonic)) assistantEnv.PATH = `${path.dirname(tectonic)}${path.delimiter}${assistantEnv.PATH || ''}`;
   record.controller = new AbortController();
-  let activityTimer = null;
-  let activityFlight = Promise.resolve();
-  const refreshAgenticActivity = complete => {
-    if (!agenticMode) return Promise.resolve();
-    activityFlight = activityFlight.catch(() => {}).then(async () => {
-      const observed = await readAgenticActivity(record.id, record.projectRoot);
-      const next = mergeAgenticActivity(record.agenticActivity, observed, complete);
-      const summary = activity => JSON.stringify({available: activity?.available, workspaceId: activity?.workspaceId, workspaceSeen: activity?.workspaceSeen, workers: activity?.workers});
-      if (summary(next) !== summary(record.agenticActivity) || (!record.agenticActivity?.checkedAt && next.checkedAt)) {
-        record.agenticActivity = next;
-        await persistAssistantRecord(record);
-      }
-    });
-    return activityFlight;
-  };
-  if (agenticMode) {
-    void refreshAgenticActivity(false);
-    activityTimer = setInterval(() => { void refreshAgenticActivity(false); }, 900);
-  }
+  const finishAgenticActivity = agenticMode ? monitorAgenticActivity(
+    () => readAgenticActivity(record.id, record.projectRoot),
+    async (observed, complete) => {
+      const previous = record.agenticActivity;
+      const next = mergeAgenticActivity(previous, observed, complete);
+      const changed = JSON.stringify(next.workers) !== JSON.stringify(previous?.workers);
+      // A successful status check proves monitor connectivity, not worker
+      // progress. Only a changed worker state advances task activity.
+      if (changed && record.status === 'running' && !record.controller?.signal.aborted) record.lastActivityAt = new Date().toISOString();
+      record.agenticActivity = next;
+      if (changed || next.available !== previous?.available || next.workspaceId !== previous?.workspaceId || !previous?.checkedAt || complete) await persistAssistantRecord(record);
+    },
+  ) : null;
   if (handoff) await appendAssistantEvent(record, {kind: 'handoff', label: 'Restoring recent conversation context', status: 'complete'});
   const assistantRun = runAssistant({selection, mode, cwd: record.projectRoot, sessionId, env: assistantEnv,
     compileDocument: (format, source, signal) => compileAssistantDocument(format, source, record.projectRoot, signal),
@@ -1144,7 +1138,7 @@ async function startAssistant(body) {
     onEffective: effective => { record.effective = effective; void persistAssistantRecord(record).catch(() => {}); },
     onUsage: async usage => { record.usage = usage; await persistAssistantRecord(record); },
     onAgentActivity: async updates => {
-      if (!agenticMode || record.status !== 'running') return;
+      if (!agenticMode || record.status !== 'running' || record.controller?.signal.aborted) return;
       const prefix = agenticWorkerPrefix(record.id);
       const workers = new Map((record.agenticActivity?.workers || []).map(worker => [worker.name, worker]));
       for (const update of updates || []) {
@@ -1154,22 +1148,19 @@ async function startAssistant(body) {
       record.agenticActivity = {...record.agenticActivity, checkedAt: new Date().toISOString(), available: true, workspaceSeen: workers.size > 0 || record.agenticActivity?.workspaceSeen, workers: [...workers.values()].slice(0, 3)};
       await persistAssistantRecord(record);
     },
-    onActivity: () => { if (record.status === 'running') record.lastActivityAt = new Date().toISOString(); },
+    onActivity: () => { if (record.status === 'running' && !record.controller?.signal.aborted) record.lastActivityAt = new Date().toISOString(); },
     onOutput: text => { if (record.status === 'running' && !record.controller?.signal.aborted) { if (record.output !== text.slice(-64000)) record.lastActivityAt = new Date().toISOString(); record.output = text.slice(-64000); } },
     onEvent: event => { if (record.status === 'running' && !record.controller?.signal.aborted) void appendAssistantEvent(record, event).catch(() => {}); },
   });
   const completion = (async () => {
     try {
       const text = await assistantRun;
-      if (activityTimer) clearInterval(activityTimer);
-      await refreshAgenticActivity(true);
+      await finishAgenticActivity?.().catch(() => {});
       if (record.status === 'running') { record.status = record.controller?.signal.aborted ? 'canceled' : 'complete'; record.output = record.status === 'canceled' ? '' : text.slice(-64000); }
     } catch (error) {
-      if (activityTimer) clearInterval(activityTimer);
-      await refreshAgenticActivity(true);
+      await finishAgenticActivity?.().catch(() => {});
       if (record.status === 'running') { record.status = record.controller?.signal.aborted ? 'canceled' : 'failed'; record.error = record.status === 'canceled' ? null : error.message; }
     } finally {
-      if (activityTimer) clearInterval(activityTimer);
       record.completedAt = new Date().toISOString(); delete record.controller;
       await appendAssistantEvent(record, {kind: record.status, label: record.status === 'complete' ? 'Task complete' : record.status === 'canceled' ? 'Task canceled' : 'Task failed', status: record.status});
     }

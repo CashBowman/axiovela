@@ -1,6 +1,6 @@
 {
   "name": "ml-theory-workbench",
-  "version": "0.2.2",
+  "version": "0.2.3-rc.1",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -46,14 +46,14 @@
     "desktop:test": "node --test scripts/updates.test.mjs scripts/desktop-contract.test.mjs scripts/mac-release.test.mjs scripts/atomic-file.test.mjs scripts/assistant-process.test.mjs scripts/provider-setup.test.mjs",
     "desktop:install:linux": "node scripts/desktop-install-linux.mjs",
     "desktop:tools": "node scripts/desktop-tools.mjs",
-    "agentic:test": "node --test scripts/agentic-start.test.mjs",
+    "agentic:test": "node --test scripts/agentic-start.test.mjs scripts/agentic-activity.test.mjs",
     "desktop:recovery:smoke": "node scripts/desktop-recovery-smoke.mjs",
     "desktop:verify:mac": "node scripts/desktop-dmg-smoke.mjs --distribution",
     "pi:smoke": "node scripts/pi-profile-smoke.mjs",
     "beta:prepare": "node scripts/beta-prepare.mjs",
     "desktop:make:portable": "npm run build && npm run desktop:tools && node scripts/desktop-notices.mjs && electron-forge make --targets @electron-forge/maker-zip && node scripts/desktop-artifacts.mjs",
     "beta:feedback:smoke": "node scripts/beta-feedback-smoke.mjs",
-    "parallel:smoke": "node scripts/concurrency-responsiveness-smoke.mjs && node scripts/parallel-smoke.mjs"
+    "parallel:smoke": "node scripts/concurrency-responsiveness-smoke.mjs && node scripts/parallel-smoke.mjs && node scripts/pi-activity-smoke.mjs"
   },
   "dependencies": {
     "@citation-js/core": "^0.7.21",

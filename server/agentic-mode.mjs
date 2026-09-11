@@ -23,6 +23,23 @@ export const agenticWorkerPrefix = jobId => `mf_${runKey(jobId)}_`;
 const parsedResult = output => JSON.parse(String(output || '').trim() || '{}')?.result || {};
 const workerStatus = value => ['idle', 'working', 'blocked', 'done'].includes(value) ? value : 'unknown';
 
+// Schedule from completion, so a slow Herdr call cannot queue unbounded polls
+// that delay task completion or cancellation. Finish drains at most one poll.
+export function monitorAgenticActivity(read, update, intervalMs = 900) {
+  let stopped = false, timer, flight;
+  const poll = () => {
+    flight = Promise.resolve().then(read).then(observed => update(observed, false)).catch(() => {});
+    void flight.finally(() => { if (!stopped) timer = setTimeout(poll, intervalMs); });
+  };
+  poll();
+  return async () => {
+    stopped = true;
+    clearTimeout(timer);
+    await flight;
+    await update(await read(), true);
+  };
+}
+
 export function agenticActivityFromResults(jobId, workspaceResult = {}, agentResult = {}, checkedAt = new Date().toISOString()) {
   const workspace = (workspaceResult.workspaces || []).find(item => item.label === agenticWorkspaceLabel(jobId));
   const workers = workspace ? (agentResult.agents || [])

@@ -75,7 +75,7 @@ export default function useParallelAssistant({request, onStarted, onComplete}) {
             callbacks.current.onComplete?.(record);
           }
         }).catch(error => {
-          if (active && jobs.current[prior.id]?.status === 'running') latest.current.put({...jobs.current[prior.id], stage: `Status connection delayed: ${error.message}. Retrying…`});
+          if (active && jobs.current[prior.id]?.status === 'running') latest.current.put({...jobs.current[prior.id], statusError: error.message || 'Status request failed'});
         }).finally(() => { clearTimeout(timeout); polling.delete(prior.id); });
       }
       // Neither another provider's slow status response nor a hidden tab can

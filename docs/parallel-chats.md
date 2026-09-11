@@ -17,3 +17,5 @@ Provider account limits, available compute, and external tools can constrain thr
 ## Verification
 
 `npm run parallel:smoke` exercises simultaneous tasks across projects, independent cancellation, ordered background follow-ups, native session continuity, reload recovery, and responsiveness during a stalled upload/status request. `npm run cli-provider:smoke` checks Pi activity events with credential-free fixtures.
+
+The activity display distinguishes a quiet provider or running tool from a failed status connection. Pi message/tool deltas and observed worker-state changes refresh task activity; successful polls alone do not. Agentic worker monitoring waits for each Herdr check to finish before scheduling another, so slow checks cannot build up a cancellation backlog. `node scripts/pi-activity-smoke.mjs` covers the Full-access Pi route, quiet worker waits, connection recovery, and slow-monitor cancellation with isolated fixtures.

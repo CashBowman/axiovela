@@ -1,0 +1,94 @@
+import assert from 'node:assert/strict';
+import {mkdtemp, mkdir, readFile, writeFile, rm} from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import {_electron as electron} from 'playwright-core';
+import electronBinary from 'electron';
+const root = process.cwd();
+const tmp = await mkdtemp(path.join(os.tmpdir(), 'axiovela-pi-activity-'));
+const fixture = path.join(tmp, 'activity.json');
+const evidence = path.join(root, '.local/pi-agentic-status-audit');
+await mkdir(evidence, {recursive: true});
+await writeFile(fixture, JSON.stringify({pulse: true}));
+const env = {...process.env};
+for (const key of Object.keys(env)) if (/^(WORKBENCH_|AXIOVELA_|OPENAI_|ANTHROPIC_|GEMINI_|GOOGLE_|AZURE_|ELECTRON_RUN_AS_NODE$|NODE_OPTIONS$)/.test(key)) delete env[key];
+Object.assign(env, {HOME: tmp, USERPROFILE: tmp, XDG_CONFIG_HOME: tmp, XDG_CACHE_HOME: tmp, AXIOVELA_DESKTOP_PROFILE: path.join(tmp, 'profile'), APPDATA: path.join(tmp, 'AppData/Roaming'), LOCALAPPDATA: path.join(tmp, 'AppData/Local'), TECTONIC_CACHE_DIR: path.join(tmp, 'tectonic'), AXIOVELA_PI_ACTIVITY_FIXTURE: fixture, WORKBENCH_PI_PATH: path.join(root, 'scripts/fixtures/provider-cli.mjs'), WORKBENCH_HERDR_PATH: path.join(root, 'scripts/fixtures/herdr-cli.mjs'), WORKBENCH_CODEX_PATH: path.join(root, 'scripts/fixtures/assistant-rpc.mjs')});
+for (const p of [env.APPDATA, env.LOCALAPPDATA, env.TECTONIC_CACHE_DIR]) await mkdir(p, {recursive: true});
+let app, page;
+const errors = [];
+const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const until = async (check, message) => { const end = Date.now() + 6000; while (!(await check())) { assert.ok(Date.now() < end, message); await pause(100); } };
+const configure = async patch => writeFile(fixture, JSON.stringify({...JSON.parse(await readFile(fixture, 'utf8')), ...patch}));
+try {
+  app = await electron.launch({executablePath: electronBinary, args: [root], env, chromiumSandbox: false});
+  page = await app.firstWindow(); page.setDefaultTimeout(15000); page.on('pageerror', error => errors.push(error.message));
+  await page.waitForFunction(() => document.querySelector('select[aria-label="Conversation"]')?.disabled === false);
+  await page.getByRole('button', {name: 'Project', exact: true}).click();
+  await page.getByRole('textbox', {name: 'Project folder'}).fill(path.join(tmp, 'project'));
+  await page.getByRole('button', {name: 'Open or create', exact: true}).click();
+  await page.getByRole('dialog').waitFor({state: 'hidden'});
+  await page.locator('.agenticHeaderControl label.switch').click();
+  await page.getByRole('textbox', {name: 'Experiment Chatbot message'}).waitFor();
+  await page.getByRole('textbox', {name: 'Experiment Chatbot message'}).fill('PI_AGENTIC_HOLD');
+  const response = page.waitForResponse(r => new URL(r.url()).pathname === '/api/assistant' && r.request().method() === 'POST');
+  await page.getByRole('button', {name: 'Send', exact: true}).click();
+  const started = await response; assert.equal(started.status(), 202);
+  const job = await started.json();
+  assert.equal(job.agenticMode, true); assert.equal(job.selection.adapterId, 'pi');
+  const get = () => page.evaluate(async ({id, project}) => (await (window.originalPiFetch || window.fetch)(`/api/assistant/${id}`, {headers: {'x-axiovela-project': encodeURIComponent(project)}})).json(), {id: job.id, project: job.projectRoot});
+  await page.getByText('Waiting for Pi workers to finish', {exact: true}).first().waitFor();
+  await until(async () => (await get()).agenticActivity.workers[0]?.status === 'working', 'worker becomes visible');
+  const first = await get(); let second;
+  await until(async () => { second = await get(); return Date.parse(second.lastActivityAt) > Date.parse(first.lastActivityAt); }, 'Pi progress reaches the backend');
+  assert.ok(Date.parse(second.lastActivityAt) > Date.parse(first.lastActivityAt), 'Pi wait output refreshes task activity');
+  assert.equal(second.events.length, first.events.length, 'repeated output does not duplicate the timeline');
+  assert.equal(second.agenticActivity.workers[0]?.status, 'working');
+  await configure({pulse: false}); await pause(400);
+  const quiet = await get(); let checked;
+  await until(async () => { checked = await get(); return Date.parse(checked.agenticActivity.checkedAt) > Date.parse(quiet.agenticActivity.checkedAt); }, 'worker monitor stays connected');
+  assert.ok(Date.parse(checked.agenticActivity.checkedAt) > Date.parse(quiet.agenticActivity.checkedAt));
+  assert.equal(checked.lastActivityAt, quiet.lastActivityAt, 'healthy polling is not fabricated provider progress');
+  await configure({workerStatus: 'blocked'}); let changed;
+  await until(async () => { changed = await get(); return changed.agenticActivity.workers[0]?.status === 'blocked'; }, 'worker transition reaches the backend');
+  assert.equal(changed.agenticActivity.workers[0]?.status, 'blocked');
+  assert.ok(Date.parse(changed.lastActivityAt) > Date.parse(quiet.lastActivityAt), 'real worker-state changes count as activity');
+  // Age only the displayed response, without waiting a minute or modifying the
+  // backend job. Simulate a transport failure separately from a quiet provider.
+  await page.evaluate(id => {
+    window.originalPiFetch = window.fetch;
+    window.piStatusFailure = false;
+    window.fetch = async (url, options) => {
+      if (new URL(url, location.href).pathname !== `/api/assistant/${id}` || options?.method) return window.originalPiFetch(url, options);
+      if (window.piStatusFailure) throw new Error('fixture status transport failure');
+      const result = await window.originalPiFetch(url, options);
+      const body = await result.json();
+      body.lastActivityAt = new Date(Date.now() - 60000).toISOString();
+      return new Response(JSON.stringify(body), {status: result.status, headers: {'content-type': 'application/json'}});
+    };
+  }, job.id);
+  await page.getByText(/Waiting for Pi workers · last task update/).waitFor();
+  assert.equal(await page.getByText(/No new provider activity|Status connection delayed/).count(), 0);
+  await page.evaluate(() => { window.piStatusFailure = true; });
+  await page.getByText('Task status unavailable · reconnecting…', {exact: true}).waitFor();
+  assert.equal((await get()).status, 'running', 'a failed status poll does not cancel the provider');
+  await page.evaluate(() => { window.piStatusFailure = false; });
+  await page.getByText('Task status unavailable · reconnecting…', {exact: true}).waitFor({state: 'hidden'});
+  await page.getByText(/Waiting for Pi workers · last task update/).waitFor();
+  await page.screenshot({path: path.join(evidence, 'pi-worker-wait.png')});
+  await page.evaluate(() => { window.fetch = window.originalPiFetch; });
+  await configure({delay: 1800}); await pause(4500);
+  const canceledAt = Date.now();
+  await page.getByRole('button', {name: 'Stop task', exact: true}).click();
+  await page.getByRole('button', {name: 'Stop task', exact: true}).waitFor({state: 'hidden'});
+  assert.ok(Date.now() - canceledAt < 6000, 'slow worker monitoring does not accumulate a cancellation backlog');
+  assert.equal((await get()).status, 'canceled');
+  assert.deepEqual(errors, []);
+  console.log('Pi Agentic activity smoke passed: actual Full-access Pi route, repeated worker output, truthful quiet status, worker changes, connection failure/recovery, bounded slow-monitor cancellation.');
+} catch (error) {
+  await page?.screenshot({path: path.join(evidence, 'pi-activity-failure.png')}).catch(() => {});
+  console.error(await page?.locator('body').innerText().catch(() => ''));
+  throw error;
+} finally {
+  await app?.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response: 1}); }).catch(() => {});
+  await app?.close(); await rm(tmp, {recursive: true, force: true, maxRetries: 10, retryDelay: 500});
+}

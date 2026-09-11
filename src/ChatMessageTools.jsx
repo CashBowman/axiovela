@@ -17,10 +17,18 @@ export function ChatTextarea(props) {
   useLayoutEffect(() => { const el = ref.current; el.style.height = '0px'; el.style.height = `${Math.min(el.scrollHeight, 300)}px`; }, [props.value]);
   return <textarea {...props} ref={ref} rows={1}/>;
 }
-export function ActivityAge({busy, events, lastActivityAt}) {
+export function ActivityAge({busy, events, lastActivityAt, statusError, agenticActivity}) {
   const [now, setNow] = useState(Date.now());
   React.useEffect(() => { if (!busy) return; const timer = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(timer); }, [busy]);
   const last = lastActivityAt || events.at(-1)?.at;
   const seconds = last ? Math.max(0, Math.floor((now - Date.parse(last)) / 1000)) : 0;
-  return busy && seconds >= 15 ? <small role="status">No new provider activity for {seconds}s · task still running</small> : null;
+  if (!busy) return null;
+  if (statusError) return <small role="status">Task status unavailable · reconnecting…</small>;
+  if (seconds < 15) return null;
+  const latest = events.at(-1);
+  const waitingForWorkers = latest?.status === 'running' && latest.label === 'Waiting for Pi workers to finish';
+  const waiting = waitingForWorkers ? 'Waiting for Pi workers'
+    : latest?.kind === 'tool' && latest.status === 'running' ? 'Waiting for the running tool'
+    : 'Waiting for the next response';
+  return <small role="status">{waiting} · last task update {seconds}s ago{waitingForWorkers && agenticActivity?.available === false ? ' · worker status unavailable' : ''}</small>;
 }

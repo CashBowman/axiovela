@@ -1,6 +1,7 @@
 // Local protocol fixture; no model calls, credentials, or shell execution.
 import readline from 'node:readline';
 import {randomUUID} from 'node:crypto';
+import {readFile, writeFile} from 'node:fs/promises';
 const args = process.argv.slice(2);
 const value = flag => args[args.indexOf(flag) + 1];
 const send = e => process.stdout.write(`${JSON.stringify(e)}\n`);
@@ -21,6 +22,24 @@ if (args.includes('rpc')) {
       promptCount += 1;
       state.lastPrompt = request.message;
       if (request.message.includes('HANG')) continue;
+      if (request.message.includes('PI_AGENTIC_HOLD')) {
+        const fixturePath = process.env.AXIOVELA_PI_ACTIVITY_FIXTURE;
+        const prefix = request.message.match(/mf_[a-f0-9]{8}_/)?.[0] || 'mf_12345678_';
+        const config = JSON.parse(await readFile(fixturePath, 'utf8'));
+        await writeFile(fixturePath, JSON.stringify({...config, prefix, workspace: `axiovela-${prefix.slice(3, -1)}`}));
+        send({type: 'tool_execution_start', toolCallId: 'held-worker', toolName: 'bash', args: {command: `herdr agent wait ${prefix}analysis --timeout 600000`}});
+        const timer = setInterval(async () => {
+          const state = await readFile(fixturePath, 'utf8').then(JSON.parse).catch(() => ({}));
+          if (state.pulse) send({type: 'tool_execution_update', toolCallId: 'held-worker', partialResult: {content: [{type: 'text', text: 'private worker output'}]}});
+          if (state.finish) {
+            clearInterval(timer);
+            send({type: 'tool_execution_end', toolCallId: 'held-worker', isError: false});
+            send({type: 'message_end', message: {role: 'assistant', content: [{type: 'text', text: 'Worker result verified.'}]}});
+            send({type: 'agent_end'});
+          }
+        }, 100);
+        continue;
+      }
       if (request.message.includes('PI_PROGRESS')) {
         send({type: 'tool_execution_start', toolCallId: 'progress', toolName: 'bash', args: {command: 'fixture-command'}});
         send({type: 'tool_execution_update', toolCallId: 'progress', partialResult: {content: [{type: 'text', text: 'private command output'}]}});
@@ -35,6 +54,8 @@ if (args.includes('rpc')) {
         send({type: 'tool_execution_start', toolCallId: 'prompt-workers', toolName: 'bash', args: {command: 'herdr agent prompt mf_12345678_linear brief && herdr agent prompt mf_12345678_sine brief'}});
         send({type: 'tool_execution_end', toolCallId: 'prompt-workers', isError: false});
         send({type: 'tool_execution_start', toolCallId: 'wait-workers', toolName: 'bash', args: {command: 'herdr agent wait mf_12345678_linear --timeout 600000 && herdr agent wait mf_12345678_sine --timeout 600000'}});
+        send({type: 'tool_execution_update', toolCallId: 'wait-workers', partialResult: {content: [{type: 'text', text: 'private worker output'}]}});
+        send({type: 'tool_execution_update', toolCallId: 'wait-workers', partialResult: {content: [{type: 'text', text: 'private worker output'}]}});
         send({type: 'tool_execution_end', toolCallId: 'wait-workers', isError: false});
       }
       send({type: 'message_end', message: {role: 'assistant', stopReason: request.message.includes('FAIL') ? 'error' : 'stop', ...(request.message.includes('FAIL') ? {errorMessage: 'Fixture authentication expired.'} : {}), content: [{type: 'text', text: JSON.stringify({args, ...state})}]}});
