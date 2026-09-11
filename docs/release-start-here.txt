@@ -13,7 +13,7 @@ On Windows x64, run Setup.exe. On Linux, use the matching DEB/RPM package manage
 Mac packages use ad-hoc signing and are not Apple-notarized. Windows packages are unsigned. Follow your OS approval process and device policy; do not disable security protections. Mac guidance: https://github.com/CashBowman/axiovela/blob/main/docs/mac-installation.md
 Windows ARM64 includes native ARM64 Electron; its bundled x64 Tectonic runs through Windows emulation.
 
-Save work, finish active tasks, and quit Axiovela before updating. Keep your research folders and existing profile. Installation is manual; verified in-app downloads are not enabled.
+Save work, finish active tasks, and quit Axiovela before updating. Keep your research folders and existing profile. Install 0.2.4 manually once from an older version. This release enables signed, verified in-app downloads for future compatible updates. Installation remains manual.
 
 Try Help > Try the example study. Connect your own AI provider below a chat composer. Run experiments and writing chats together, switch project tabs freely, or start another conversation. Queue follow-ups to continue in the background. Stop task affects only the selected chat. Chats in one project share files; give assistants distinct outputs.
 
