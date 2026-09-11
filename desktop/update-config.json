@@ -1,4 +1,6 @@
 {
   "repository": "CashBowman/axiovela",
-  "publicKeys": []
+  "publicKeys": [
+    "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAyni+oUedm7JJ1sHVzqQh8iUlq0AM5FQ7VOnFz5CULnA=\n-----END PUBLIC KEY-----\n"
+  ]
 }

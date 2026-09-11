@@ -1,7 +1,8 @@
 # Changelog
 
-## 0.2.3-rc.1 (candidate)
+## 0.2.3
 
+- Enable signed update downloads with a pinned release key and select only available formats for each architecture. Older installations require a manual bootstrap update.
 - Distinguish quiet Pi/tool/worker waits from an actual status connection failure.
 - Prevent slow Herdr monitoring from accumulating checks that delay completion or cancellation.
 - Record worker-state changes without treating unchanged status polls as provider progress.

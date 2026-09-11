@@ -117,6 +117,24 @@ test('platform and architecture mismatch never downloads a different artifact', 
   for (const platform of ['darwin', 'win32']) await isolated(async u => { await u.check(); await assert.rejects(u.download(platform === 'darwin' ? 'dmg' : 'exe'), /no download/); }, {platform});
   await isolated(async u => { await u.check(); await assert.rejects(u.download('zip'), /no download/); }, {arch: 'arm64'});
 });
+test('all release formats download the matching CPU; Windows ARM selects its available ZIP', async () => {
+  const targets = [['darwin', ['dmg', 'zip']], ['win32', ['exe', 'zip']], ['linux', ['zip', 'deb', 'rpm']]];
+  const assets = targets.flatMap(([platform, formats]) => ['x64', 'arm64'].flatMap(arch => formats.filter(format => !(platform === 'win32' && arch === 'arm64' && format === 'exe')).map(format => ({...manifest().assets[0], name: `Axiovela-0.2.1-${platform}-${arch}.${format}`, platform, arch, format}))));
+  for (const [platform] of targets) for (const arch of ['x64', 'arm64']) {
+    const expected = assets.filter(asset => asset.platform === platform && asset.arch === arch);
+    for (const asset of expected) await isolated(async u => {
+      let requested;
+      u.fetcher = fetcher({signed: envelope(manifest({assets})), artifact: url => { requested = url; return new Response(bytes); }});
+      await u.check();
+      assert.deepEqual(u.state.formats, expected.map(a => a.format));
+      assert.equal(u.state.format, expected[0].format);
+      await u.download(asset.format);
+      assert.equal(u.state.status, 'ready');
+      assert.ok(requested.endsWith('/' + asset.name));
+      assert.deepEqual(await readFile(u.downloaded), bytes);
+    }, {platform, arch});
+  }
+});
 test('publisher signs exact local artifacts with the pinned key and refuses replacement; no build or network required', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'axiovela-publish-test-'));
   try {

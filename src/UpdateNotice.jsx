@@ -22,7 +22,7 @@ export default function UpdateNotice() {
   if (!state) return null;
   const act = async (action, value) => { setError(''); try { setState(await api.update(action, value)); } catch (e) { setError(e.message); } };
   const busy = ['checking', 'downloading'].includes(state.status);
-  const selected = format || state.format;
+  const selected = state.formats.includes(format) ? format : state.format;
   const notice = state.release && dismissed !== state.release.version;
   return <aside className="update-notice" aria-label="Application updates">
     {!open && notice && <button className="update-badge" onClick={() => setOpen(true)}>Update available · {state.release.version}</button>}

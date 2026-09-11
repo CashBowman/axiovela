@@ -119,7 +119,9 @@ class Updates extends EventEmitter {
       if (!this.keys.length) throw new Error('Verified downloads are not configured for this build. Use the release page.');
       const envelope = await jsonRequest(assetUrl(release.tag_name, 'axiovela-update.json'), {fetcher: this.fetcher, signal: AbortSignal.timeout(30000)});
       this.manifest = validateManifest(envelope, {keys: this.keys, tag: release.tag_name});
-      this.set({status: 'available', release: {...this.state.release, notes: this.manifest.notes, verified: true}});
+      const availableFormats = formats(this.platform).filter(format => this.manifest.assets.some(asset => asset.platform === this.platform && asset.arch === this.arch && asset.format === format));
+      if (!availableFormats.length) throw new Error('This release has no download for this system. Use the release page.');
+      this.set({status: 'available', formats: availableFormats, format: availableFormats.includes(this.state.format) ? this.state.format : availableFormats[0], release: {...this.state.release, notes: this.manifest.notes, verified: true}});
     } catch (error) { this.set({status: this.state.release ? 'available' : 'error', error: error.message}); }
     finally { this.busy = false; }
     return this.snapshot();
