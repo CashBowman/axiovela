@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.5
+
+- Restore Agentic mode per conversation, matching running tasks and follow-up settings after reopening.
+- Keep Pi sessions alive through intermediate provider/WebSocket errors, retries, and context recovery; report completion only after settling, with a legacy idle check for older Pi.
+- Show queued prompts beside the composer with in-place editing, preserving separate drafts and submitted settings. Pause and retain follow-ups after failure/Stop, preserve ordering during edits, and restore saved queues paused after reopening.
+- Preserve a message when delivery cannot be confirmed; never silently resubmit an ambiguous request.
+
 ## 0.2.4
 
 - Fix GitHub update discovery returning HTTP 415 by requesting the release list as JSON, while retaining binary headers for installer downloads.

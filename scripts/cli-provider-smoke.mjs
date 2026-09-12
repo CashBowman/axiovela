@@ -61,6 +61,16 @@ try {
       assert.equal(workerProgress, 10, 'Pi Agentic mode forwards worker lifecycle, repeated wait output, and completion activity');
       assert.ok(workerEvents.some(event => event.label === 'Waiting for Pi workers to finish'));
       assert.ok(!JSON.stringify(workerEvents).includes('private worker output'));
+      for (const prompt of ['PI_RETRY_RECOVER', 'PI_LEGACY_RETRY', 'PI_COMPACT_RECOVER']) {
+        const retryEvents = [];
+        assert.equal(await runAssistant({...options, mode: 'full', prompt, onEvent: e => retryEvents.push(e)}), 'Recovered without resubmitting the prompt.');
+        assert.ok(retryEvents.some(e => /retry|context/i.test(e.label)), 'retry/compaction status is visible');
+      }
+      await assert.rejects(runAssistant({...options, mode: 'full', prompt: 'PI_RETRY_EXHAUST'}), /WebSocket closed 1006/);
+      const retryAbort = new AbortController();
+      const retryTimer = setTimeout(() => retryAbort.abort(), 200);
+      try { await assert.rejects(runAssistant({...options, mode: 'full', prompt: 'PI_RETRY_RECOVER', signal: retryAbort.signal}), /canceled/); }
+      finally { clearTimeout(retryTimer); }
       await assert.rejects(runAssistant({...options, mode: 'auto'}), /supports these/);
     }
     if (['claude', 'gemini'].includes(id)) assert.equal(effective.modelId, 'reported-model');

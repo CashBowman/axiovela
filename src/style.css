@@ -823,9 +823,14 @@ nav .selected {
 .collapsedPrompt { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
 .messageCopy { display: flex; gap: 5px; align-items: center; margin-top: 6px; opacity: .8; }
 .message.user .textButton { color: inherit; }
-.promptQueue { padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12px; }
-.promptQueue > div { display: flex; gap: 8px; align-items: center; }
-.promptQueue span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.promptQueue { flex: 0 0 auto; padding: 8px 12px; border-top: 1px solid var(--line); background: var(--soft); font-size: 12px; min-width: 0; }
+.queueHeading, .queueActions { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.queueItems { max-height: 180px; overflow-y: auto; }
+.queueItem { padding: 8px 0; border-top: 1px solid var(--line); }
+.queueItem p { margin: 5px 0; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 100px; overflow-y: auto; }
+.queueItem textarea { width: 100%; min-height: 64px; max-height: 140px; resize: vertical; font: inherit; color: inherit; padding: 8px; border: 1px solid var(--line); border-radius: 6px; }
+.queueActions { justify-content: flex-end; }
+.promptQueue > p { margin: 5px 0; }
 .projectTabs { display: flex; gap: 5px; overflow-x: auto; padding: 4px 16px; border-bottom: 1px solid var(--line); }
 .projectTabs > div { display: flex; flex: 0 0 auto; border-radius: 6px; }
 .projectTabs button { background: transparent; border: 0; padding: 6px; color: inherit; font-size: 12px; }

@@ -17,9 +17,7 @@ with a Show full prompt control. Both prompt and response text can be copied.
 Messages entered during a run queue for that conversation, retaining the model,
 access mode, research profile and attachment selected when submitted. Follow-ups
 continue while another conversation or project is visible. Edit or remove them
-in their owning conversation. Stop or failure clears only that conversation's
-queue. Queues are in memory, so close/reload discards unsent follow-ups; running
-jobs reconnect after renderer reload. This is follow-up queueing, not in-flight
+in their owning conversation. Stop or failure pauses only that conversation’s queue, retaining its prompts. Queues and in-place edits are saved locally and restored paused after reopening; Resume queue is explicit. Running jobs reconnect after renderer reload. This is follow-up queueing, not in-flight
 native model steering. Activity reports real provider events and elapsed quiet
 time, with repeated events refreshing the activity timestamp. Polling and
 cancellation remain available during unrelated filesystem operations. Provider limits still apply.

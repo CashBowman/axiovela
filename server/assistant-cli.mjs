@@ -120,7 +120,7 @@ function piToolLabel(event, command, actions) {
 
 async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession, onEffective, onOutput, onEvent, onActivity, onUsage, onAgentActivity, env}, model) {
   const rpc = piConnect(cwd, mode, sessionId || randomUUID(), env, selection.profileId);
-  let output = '', rejectDone;
+  let output = '', rejectDone, providerError, retrying = false, compacting = false, expectsSettled = false, completionTimer, generation = 0;
   const herdrCalls = new Map();
   const reportAgents = updates => {
     if (!onAgentActivity || !updates.length) return;
@@ -128,8 +128,37 @@ async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession
   };
   const done = new Promise((resolve, reject) => {
     rejectDone = reject;
+    const finish = () => providerError ? reject(providerError) : output.trim() ? resolve(output) : reject(new Error('Pi returned no user-facing response.'));
+    const legacyCompletion = () => {
+      const current = generation;
+      clearTimeout(completionTimer);
+      completionTimer = setTimeout(async () => {
+        if (current !== generation || expectsSettled || retrying || compacting) return;
+        try {
+          const state = await rpc.request('get_state');
+          if (current !== generation || expectsSettled || retrying || compacting) return;
+          if (state.isStreaming || state.isCompacting || state.pendingMessageCount > 0) { legacyCompletion(); return; }
+          finish();
+        } catch (error) { reject(error); }
+      }, 100);
+    };
     rpc.on('failure', reject);
     rpc.on('event', e => {
+      // agent_end is a low-level boundary, not session completion. Modern Pi
+      // advertises willRetry and emits agent_settled after retries/compaction.
+      // Older Pi needs a deferred idle probe plus lifecycle guards.
+      if (['agent_start', 'message_start', 'auto_retry_start', 'compaction_start', 'auto_compaction_start'].includes(e.type)) { generation++; clearTimeout(completionTimer); }
+      if (e.type === 'auto_retry_start') {
+        retrying = true; onActivity?.();
+        onEvent({kind: 'connection', label: `Provider retry ${Number(e.attempt) || 1} of ${Number(e.maxAttempts) || 1}`, status: 'running'});
+      }
+      if (e.type === 'auto_retry_end') {
+        retrying = false;
+        if (!e.success) { providerError = new Error(`Pi provider request failed: ${String(e.finalError || 'Provider retries exhausted.').slice(0, 300)}`); if (!expectsSettled) legacyCompletion(); }
+      }
+      if (['compaction_start', 'auto_compaction_start'].includes(e.type)) { compacting = true; onActivity?.(); onEvent({kind: 'status', label: 'Preparing conversation context', status: 'running'}); }
+      if (['compaction_end', 'auto_compaction_end'].includes(e.type)) { compacting = false; if (!e.willRetry && !expectsSettled) legacyCompletion(); }
+      if (e.type === 'agent_settled') { clearTimeout(completionTimer); finish(); }
       // Count real provider progress, including deltas that do not change the
       // public timeline. RPC responses to our own requests are not activity.
       if (['agent_start', 'agent_end', 'turn_start', 'turn_end', 'message_start', 'message_update', 'message_end', 'tool_execution_start', 'tool_execution_update', 'tool_execution_end'].includes(e.type)) onActivity?.();
@@ -140,8 +169,10 @@ async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession
         if (e.message.stopReason === 'error') {
           const detail = typeof e.message.errorMessage === 'string' && e.message.errorMessage.length <= 300 ? e.message.errorMessage : '';
           const loginHint = /(?:auth|token).*(?:expir|invalid)|(?:expir|invalid).*(?:auth|token)/i.test(detail) ? ' Open pi in a terminal and run /login openai-codex, then retry.' : '';
-          return reject(new Error(detail ? `Pi provider request failed: ${detail}${loginHint}` : 'Pi provider request failed. Check model access and login.'));
+          providerError = new Error(detail ? `Pi provider request failed: ${detail}${loginHint}` : 'Pi provider request failed. Check model access and login.');
+          return;
         }
+        providerError = e.message.stopReason === 'aborted' ? new Error('Pi provider request was aborted.') : null;
         output = (e.message.content || []).filter(p => p.type === 'text').map(p => p.text).join('\n'); onOutput(output);
       }
       if (e.type === 'tool_execution_start') {
@@ -159,7 +190,10 @@ async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession
         reportAgents(actions.map(item => ({name: item.name, status: e.isError || e.error ? 'failed' : item.action === 'wait' ? 'done' : item.action === 'start' ? 'idle' : 'working'})));
         onEvent({kind: 'tool', label: e.isError || e.error ? 'Project tool reported an error' : 'Project tool finished', status: 'complete'});
       }
-      if (e.type === 'agent_end') output.trim() ? resolve(output) : reject(new Error('Pi returned no user-facing response.'));
+      if (e.type === 'agent_end') {
+        if (typeof e.willRetry === 'boolean') expectsSettled = true;
+        if (!expectsSettled && !retrying && !compacting) legacyCompletion();
+      }
     });
   });
   done.catch(() => {});
@@ -180,5 +214,5 @@ async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession
       if (stats) await onUsage(publicPiUsage(stats, startingStats || {}));
     }
     return result;
-  } finally { signal.removeEventListener('abort', abort); await rpc.close(); }
+  } finally { clearTimeout(completionTimer); signal.removeEventListener('abort', abort); await rpc.close(); }
 }

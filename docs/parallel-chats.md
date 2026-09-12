@@ -4,9 +4,11 @@ Axiovela 0.2.2 runs independent assistant conversations concurrently. Start an e
 
 Choose **New chat** to start an independent conversation while an existing one works. Send a follow-up in a busy conversation to queue it. Follow-ups retain their submitted model, access, and research settings and start in order, including while that chat is hidden. Each conversation has its own draft and task state.
 
-The header shows running tasks across projects. **Stop task** affects the selected chat and clears its queued follow-ups. Reloading the window reconnects to active backend tasks. Unsent drafts and queued follow-ups are held in renderer memory and do not survive a full reload or application exit.
+The header shows running tasks across projects. **Stop task** affects only the selected chat and pauses its queued follow-ups. Failures also pause the queue without deleting prompts. Queued messages appear next to the composer with Edit and Remove controls. Editing holds that message and later messages in order; Save keeps its original model, access, attachment, and Agentic settings. Editing a queued message does not replace the separate composer draft.
 
-Activity shows observed provider events, including Pi streaming progress and tool completion. “No new provider activity” means no event has arrived recently; a quiet command or provider wait can still be running. A slow status request in one chat does not block status or queued work in another.
+Queues and their edits are saved locally. Reopening restores them paused; choose **Resume queue** after reviewing the conversation. A failed or interrupted submission is retained for review instead of being silently retried. Reloading reconnects to active backend tasks. Unsubmitted composer drafts remain in renderer memory. If local queue persistence fails, the UI reports that messages are only retained in the current window.
+
+Activity shows observed provider events, including Pi streaming progress and tool completion. A quiet command or provider wait can still be running. Pi retry and context-preparation states remain active until the native session settles; intermediate WebSocket errors do not abort Pi’s recovery. Exhausted provider failures are shown truthfully. A slow status request in one chat does not block status or queued work in another.
 
 ## Working effectively
 

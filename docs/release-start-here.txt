@@ -1,6 +1,6 @@
-AXIOVELA 0.2.4 — START HERE
+AXIOVELA 0.2.5 — START HERE
 
-Download: https://github.com/CashBowman/axiovela/releases/tag/v0.2.4
+Download: https://github.com/CashBowman/axiovela/releases/tag/v0.2.5
 
 Choose your operating system and processor:
 - Mac M-series: darwin-arm64.dmg. Intel Mac: darwin-x64.dmg.
@@ -13,8 +13,8 @@ On Windows x64, run Setup.exe. On Linux, use the matching DEB/RPM package manage
 Mac packages use ad-hoc signing and are not Apple-notarized. Windows packages are unsigned. Follow your OS approval process and device policy; do not disable security protections. Mac guidance: https://github.com/CashBowman/axiovela/blob/main/docs/mac-installation.md
 Windows ARM64 includes native ARM64 Electron; its bundled x64 Tectonic runs through Windows emulation.
 
-Save work, finish active tasks, and quit Axiovela before updating. Keep your research folders and existing profile. Install 0.2.4 manually once from an older version. This release enables signed, verified in-app downloads for future compatible updates. Installation remains manual.
+Save work, finish active tasks, and quit Axiovela before updating. Keep your research folders and existing profile. From 0.2.4, use the in-app update panel to download and verify this release. Older builds need one manual upgrade to 0.2.5. Installation remains manual.
 
-Try Help > Try the example study. Connect your own AI provider below a chat composer. Run experiments and writing chats together, switch project tabs freely, or start another conversation. Queue follow-ups to continue in the background. Stop task affects only the selected chat. Chats in one project share files; give assistants distinct outputs.
+Try Help > Try the example study. Connect your own AI provider below a chat composer. Run experiments and writing chats together, switch project tabs freely, or start another conversation. Queue follow-ups to continue in the background. Queued messages stay visible and editable, pause after errors or Stop, and restore paused after reopening. Stop task affects only the selected chat. Chats in one project share files; give assistants distinct outputs.
 
 Read the release notes for validation results and SHA256SUMS.txt for artifact checksums. Retain backups of important work and review AI-generated code and claims.

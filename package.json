@@ -1,6 +1,6 @@
 {
   "name": "ml-theory-workbench",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -53,7 +53,7 @@
     "beta:prepare": "node scripts/beta-prepare.mjs",
     "desktop:make:portable": "npm run build && npm run desktop:tools && node scripts/desktop-notices.mjs && electron-forge make --targets @electron-forge/maker-zip && node scripts/desktop-artifacts.mjs",
     "beta:feedback:smoke": "node scripts/beta-feedback-smoke.mjs",
-    "parallel:smoke": "node scripts/concurrency-responsiveness-smoke.mjs && node scripts/parallel-smoke.mjs && node scripts/pi-activity-smoke.mjs"
+    "parallel:smoke": "node scripts/concurrency-responsiveness-smoke.mjs && node scripts/parallel-smoke.mjs && node scripts/pi-activity-smoke.mjs && node scripts/agentic-queue-smoke.mjs"
   },
   "dependencies": {
     "@citation-js/core": "^0.7.21",

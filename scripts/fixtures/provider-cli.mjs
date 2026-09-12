@@ -21,6 +21,30 @@ if (args.includes('rpc')) {
     if (request.type === 'prompt') {
       promptCount += 1;
       state.lastPrompt = request.message;
+      if (/PI_(?:RETRY|LEGACY_RETRY|COMPACT)/.test(request.message)) {
+        const legacy = request.message.includes('PI_LEGACY_RETRY');
+        const compact = request.message.includes('PI_COMPACT');
+        const exhausted = request.message.includes('EXHAUST');
+        state.isStreaming = false; state.isCompacting = false;
+        send({type: 'message_end', message: {role: 'assistant', stopReason: 'error', errorMessage: compact ? 'context overflow' : 'WebSocket closed 1006', content: []}});
+        send({type: 'agent_end', ...(legacy ? {} : {willRetry: !compact})});
+        if (compact) { state.isCompacting = true; send({type: 'compaction_start', reason: 'overflow'}); }
+        else send({type: 'auto_retry_start', attempt: 1, maxAttempts: 2, delayMs: 350, errorMessage: 'WebSocket closed 1006'});
+        setTimeout(() => {
+          state.isCompacting = false;
+          if (exhausted) {
+            send({type: 'auto_retry_end', success: false, attempt: 2, finalError: 'WebSocket closed 1006'});
+            send({type: 'agent_settled'}); return;
+          }
+          if (compact) send({type: 'compaction_end', willRetry: true, aborted: false});
+          send({type: 'agent_start'});
+          send({type: 'message_end', message: {role: 'assistant', stopReason: 'stop', content: [{type: 'text', text: 'Recovered without resubmitting the prompt.'}]}});
+          if (!compact) send({type: 'auto_retry_end', success: true, attempt: 1});
+          send({type: 'agent_end', ...(legacy ? {} : {willRetry: false})});
+          if (!legacy) setTimeout(() => send({type: 'agent_settled'}), 80);
+        }, 350);
+        continue;
+      }
       if (request.message.includes('HANG')) continue;
       if (request.message.includes('PI_AGENTIC_HOLD')) {
         const fixturePath = process.env.AXIOVELA_PI_ACTIVITY_FIXTURE;
@@ -34,8 +58,9 @@ if (args.includes('rpc')) {
           if (state.finish) {
             clearInterval(timer);
             send({type: 'tool_execution_end', toolCallId: 'held-worker', isError: false});
-            send({type: 'message_end', message: {role: 'assistant', content: [{type: 'text', text: 'Worker result verified.'}]}});
-            send({type: 'agent_end'});
+            send({type: 'message_end', message: {role: 'assistant', stopReason: state.fail ? 'error' : 'stop', errorMessage: state.fail ? 'WebSocket closed 1006' : undefined, content: state.fail ? [] : [{type: 'text', text: 'Worker result verified.'}]}});
+            send({type: 'agent_end', willRetry: false});
+            send({type: 'agent_settled'});
           }
         }, 100);
         continue;
