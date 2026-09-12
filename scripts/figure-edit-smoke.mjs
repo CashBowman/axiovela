@@ -3,9 +3,10 @@ import {mkdtemp, mkdir, readFile, writeFile, rename, rm} from 'node:fs/promises'
 import path from 'node:path';
 import os from 'node:os';
 import {_electron as electron} from 'playwright-core';
-import electronBinary from 'electron';
 
 const root = process.cwd();
+const packagedBinary = process.env.AXIOVELA_FIGURE_TEST_BINARY;
+const executablePath = packagedBinary || (await import('electron')).default;
 const tmp = await mkdtemp(path.join(os.tmpdir(), 'axiovela-figure-edit-'));
 const home = path.join(tmp, 'home');
 const project = path.join(tmp, 'project');
@@ -18,7 +19,7 @@ await writeFile(fixture, await readFile('scripts/fixtures/assistant-rpc.mjs'));
 env.WORKBENCH_CODEX_PATH = fixture;
 let app;
 try {
-  app = await electron.launch({executablePath: electronBinary, args: [root], env, chromiumSandbox: true});
+  app = await electron.launch({executablePath, args: packagedBinary ? [] : [root], env, chromiumSandbox: true});
   const page = await app.firstWindow();
   page.setDefaultTimeout(20000);
   await page.waitForFunction(() => document.querySelector('select[aria-label="Conversation"]')?.disabled === false);

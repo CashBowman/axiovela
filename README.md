@@ -38,6 +38,8 @@ Axiovela runs in its own window on **Linux, Windows, and macOS**. The desktop ap
 
 **Download Axiovela 0.2.5 · Stable release**
 
+Downloads include the figure-edit fix: revise existing plots from saved results and see updated previews. Already installed 0.2.5? Download again and reinstall to get this refresh; the version number is unchanged.
+
 **Windows**
 
 <a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.5/Axiovela-0.2.5-win32-x64-Setup.exe"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/windows.png" alt="Download Windows: Intel / AMD · 64-bit" width="320" height="88" /></a>

@@ -1,12 +1,10 @@
 # Changelog
 
-## Unreleased source fixes
+## 0.2.5
 
 - Figure edit requests now instruct assistants to reuse existing plotting source and recorded results, replace the same export and metadata entry, and keep recovery copies outside the gallery. New experiments and explicitly requested variants retain separate figures.
 - Replacing a figure refreshes its gallery preview and an already-open viewer, including captions and download links, without adding a duplicate card.
-- These changes are source-only; the published 0.2.5 installers are unchanged.
-
-## 0.2.5
+- The 0.2.5 downloads were refreshed to include these figure fixes. Existing 0.2.5 users must download again and reinstall; same-version updates are not automatically offered.
 
 - Restore Agentic mode per conversation, matching running tasks and follow-up settings after reopening.
 - Keep Pi sessions alive through intermediate provider/WebSocket errors, retries, and context recovery; report completion only after settling, with a legacy idle check for older Pi.
