@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased source fixes
+
+- Figure edit requests now instruct assistants to reuse existing plotting source and recorded results, replace the same export and metadata entry, and keep recovery copies outside the gallery. New experiments and explicitly requested variants retain separate figures.
+- Replacing a figure refreshes its gallery preview and an already-open viewer, including captions and download links, without adding a duplicate card.
+- These changes are source-only; the published 0.2.5 installers are unchanged.
+
 ## 0.2.5
 
 - Restore Agentic mode per conversation, matching running tasks and follow-up settings after reopening.

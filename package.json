@@ -25,6 +25,7 @@
     "provider:smoke": "node scripts/provider-smoke.mjs",
     "cli-provider:smoke": "node scripts/cli-provider-smoke.mjs",
     "research:smoke": "node scripts/research-smoke.mjs",
+    "figures:smoke": "node scripts/figure-edit-smoke.mjs",
     "setup:latex": "node scripts/setup-latex.mjs",
     "setup": "node scripts/install.mjs",
     "install:cli": "npm run build && npm link --no-audit --no-fund",

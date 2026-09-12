@@ -54,7 +54,11 @@ try {
   assert.match(await page.locator('.promptQueue').innerText(), /Queued follow-up/);
   await page.getByRole('button', {name: 'Stop task'}).click();
   await page.getByRole('button', {name: 'Stop task'}).waitFor({state: 'hidden'});
-  assert.equal(await page.locator('.promptQueue').count(), 0);
+  // Since 0.2.5, Stop retains follow-ups for explicit review or removal.
+  assert.match(await page.locator('.promptQueue').innerText(), /Queue paused/);
+  assert.match(await page.locator('.promptQueue').innerText(), /Queued follow-up/);
+  await page.getByRole('button', {name: 'Remove queued message'}).click();
+  await page.locator('.promptQueue').waitFor({state: 'hidden'});
   // Queue while the fixture waits for our explicit release signal.
   await composer.fill('First queued-chain turn');
   await sendPrompt();

@@ -33,6 +33,8 @@ When updating this file, preserve this bar for all agents and keep entries conci
 
 - Run `npm run research:smoke` for dataset, evidence metadata, and legacy-link regressions. The optional `node scripts/research-smoke.mjs --serve` opens an isolated credential-free UI fixture on port 8896; never test writes against a user's research project. Presentation contracts are in `docs/research-workspace.md`.
 
+- Figure revision instructions live in `server/research-context.mjs`: presentation edits reuse saved results and replace the same export/metadata path, with backups outside the gallery. `npm run build && npm run figures:smoke` checks same-path updates in gallery cards and an open viewer. Preserve revisioned image URLs and refresh viewer metadata without reordering its selection.
+
 - The local Node service is `server/index.mjs`; endpoint contracts and safety rules are documented in `docs/runner-backend.md`. Run `npm run backend:smoke` for an end-to-end runner check.
 - The backend-managed default project root is intentionally ignored (`ml-theory-workbench-project/`); use `project-template/` for committed workflow, prompt, and model-role sources.
 - Native assistant protocol code lives in `server/assistant-runtime.mjs`. Run `npm run assistant:smoke` for credential-free session/model regression tests; supported engines and permission limitations are documented in `docs/model-tools.md`.

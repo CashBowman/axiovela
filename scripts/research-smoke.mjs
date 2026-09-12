@@ -243,6 +243,17 @@ try {
   assert.match(writingPrompt, /A fresh conversation does not mean no research/);
   assert.match(writingPrompt, /Attached project figure reference/);
   assert.equal(writingTurn.artifactPath, 'artifacts/figures/nested/baseline.svg');
+  const figureEdit = await turn(firstChat.id, 'FIXTURE_PROMPT Make the legend smaller on this figure.', {artifactPath: 'artifacts/figures/nested/baseline.svg'});
+  const figurePrompt = JSON.parse(figureEdit.output).prompt;
+  for (const prompt of [figurePrompt, writingPrompt]) {
+    assert.match(prompt, /Revise existing figures in place by default/);
+    assert.match(prompt, /re-render only that figure from saved data\/results/);
+    assert.match(prompt, /replace the existing export at the same project-relative path/);
+    assert.match(prompt, /Update its metadata entry by path, preserving runId\/runIds/);
+    assert.match(prompt, /explicitly requested alternatives/);
+    assert.match(prompt, /Pass these revision constraints and the exact target path to any delegated worker/);
+  }
+  assert.equal(figureEdit.artifactPath, 'artifacts/figures/nested/baseline.svg');
   assert.doesNotMatch(projectEvidenceContext({...project, models: {apiKey: 'secret-fixture'}, infrastructure: {token: 'secret-fixture'}}), /secret-fixture/);
   // Older histories have no conversation ID. They remain available beyond the old 30-job cap.
   for (let i = 0; i < 32; i++) {
@@ -253,7 +264,7 @@ try {
   const legacy = await request('/api/assistant?conversationId=legacy-writing');
   assert.equal(legacy.jobs.length, 32);
   assert.equal(legacy.jobs[0].message, 'Legacy request 0');
-  assert.equal((await request('/api/assistant?allConversations=1')).jobs.length, 38);
+  assert.equal((await request('/api/assistant?allConversations=1')).jobs.length, 39);
   const pending = await request('/api/assistant', {conversationId: secondChat.id, message: 'FIXTURE_HANG', permissionMode: 'ask', selection: {adapterId: 'codex', modelId: 'test-model', effort: 'low'}});
   await request('/api/datasets', {name: 'while-chat-runs.csv', data: 'eCx5CjEsMgo='});
   await request(`/api/assistant/${pending.id}/cancel`, {});

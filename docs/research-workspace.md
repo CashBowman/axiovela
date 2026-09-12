@@ -26,6 +26,10 @@ Every request includes a bounded current snapshot of completed/running experimen
 
 ## Inspect figures and experiments
 
+For an existing figure, presentation edits should reuse its plotting source and saved results, replacing the same export and metadata entry. They should not rerun the experiment or create another gallery card. Recovery copies belong outside the gallery/export folders; new experiments and explicitly requested alternatives keep separate paths. Attach the figure or name it when the target might be ambiguous. These are shared assistant instructions, including Pi Agentic worker briefs, rather than a guarantee of model compliance.
+
+The gallery and an open enlarged viewer refresh when a figure's file modification time changes, preserving its path and existing manuscript links. Run `npm run figures:smoke` after `npm run build` for an isolated same-path replacement regression.
+
 Select **Enlarge** for a full-window viewer. Use previous/next buttons or arrow keys to browse, **Fit** to reset, and +/− to zoom. Scroll the canvas to pan when zoomed, or select a thumbnail in the bottom strip. Escape closes the viewer and restores keyboard focus. **Original** downloads the source image.
 
 The write-up gallery has separate **Enlarge** and **Insert into write-up** actions. Dragging still inserts a figure. Drag the horizontal divider below the Research Assistant downward to grow chat and compress the figures panel; keyboard users can focus that divider and use Up/Down. Layout changes persist locally.
