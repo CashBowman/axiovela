@@ -12,6 +12,8 @@
 
 Axiovela keeps your code, data, figures, citations, and writing together in ordinary project files on your computer. Connect your AI provider, guide the work, and review the evidence at each step.
 
+For mathematical research, explore [Axiovela Math](https://github.com/CashBowman/axiovela-math), the companion workspace for literature, claims, proofs, Lean checks, and mathematical writing. **Currently in private development; repository access is required.**
+
 ## Keep research moving in parallel
 
 Run an experiment, develop a manuscript, and explore another project at the same time. **Axiovela 0.2.5 lets independent chats work concurrently**, so you can keep prompting and reviewing while other tasks continue in the background.
