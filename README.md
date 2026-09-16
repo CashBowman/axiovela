@@ -14,6 +14,14 @@ Axiovela keeps your code, data, figures, citations, and writing together in ordi
 
 For mathematical research, explore [Axiovela Math](https://github.com/CashBowman/axiovela-math), the companion workspace for literature, claims, proofs, Lean checks, and mathematical writing. **Currently in private development; repository access is required.**
 
+## Keep your research connected
+
+- **Library:** collect articles and PDFs beside experiments, claims, hypotheses and questions. Filter by kind and reading status.
+- **Feedback:** select a passage or use an image’s small feedback button. Combine several unsent notes with a normal message before sending.
+- **Projects:** reopen previous work in tabs from the Projects menu. Inspect explained connections between projects and experiments when needed.
+
+[Library and annotations](docs/annotations.md) · [Project navigation and storage](docs/project-navigator.md)
+
 ## Keep research moving in parallel
 
 Run an experiment, develop a manuscript, and explore another project at the same time. **Axiovela 0.2.6 lets independent chats work concurrently**, so you can keep prompting and reviewing while other tasks continue in the background.
@@ -40,7 +48,7 @@ Axiovela runs in its own window on **Linux, Windows, and macOS**. The desktop ap
 
 **Download Axiovela 0.2.6 · Stable release**
 
-Downloads include the figure-edit fix: revise existing plots from saved results and see updated previews. Already installed 0.2.6? Download again and reinstall to get this refresh; the version number is unchanged.
+This release adds Library, passage and image feedback, remembered projects, and explained connections. Existing project files and conversations are preserved.
 
 **Windows**
 
