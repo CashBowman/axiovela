@@ -4,6 +4,7 @@ import { sentenceBounds, quoteAnchor } from "../shared/annotations.mjs";
 // and synthetic block separators never become DOM offsets.
 export function textProjection(root) {
   const entries = [];
+  const pdf = root.classList.contains("textLayer") || !!root.querySelector(".textLayer");
   let text = "",
     previousBlock = null;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
@@ -28,8 +29,7 @@ export function textProjection(root) {
       ) || root;
     if (previousBlock && previousBlock !== block && !/\s$/.test(text))
       text +=
-        root.classList.contains("textLayer") ||
-        !!root.querySelector(".textLayer")
+        pdf
           ? "\n"
           : "\n\n";
     entries.push({
@@ -68,8 +68,7 @@ function offset(projection, node, at) {
   const inside = projection.entries.filter((e) => node.contains?.(e.node));
   return inside.at(-1)?.end;
 }
-export function capturePassage(root, event, { exact = false } = {}) {
-  const projection = textProjection(root);
+export function capturePassage(root, event, { exact = false, projection = textProjection(root) } = {}) {
   if (!projection.text.trim()) return null;
   const selection = window.getSelection();
   let range = selection?.rangeCount ? selection.getRangeAt(0) : null;
@@ -162,4 +161,14 @@ export function rangeRects(range, root) {
     } else rows.push(next);
   }
   return rows;
+}
+
+// Overlay highlights and pins must not invalidate the document they measure.
+export function hasContentMutation(records) {
+  const overlay = node => (node.nodeType === 1 ? node : node.parentElement)?.closest?.('[data-annotation-ui]');
+  return records.some(record => {
+    if (overlay(record.target)) return false;
+    if (record.type !== 'childList') return true;
+    return [...record.addedNodes, ...record.removedNodes].some(node => !overlay(node));
+  });
 }

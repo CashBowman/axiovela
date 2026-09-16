@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.7
+
+- Stabilize annotation popovers from their first visible frame and reopen notes beside their pins.
+- Avoid parsing unchanged Markdown/math while typing; preserve live callbacks, citations, image revisions and conversation polling state.
+- Match scrollbars to the light workspace while retaining system high-contrast rendering.
+- See [release notes](docs/releases/0.2.7.md) for measured fixture results and local installer validation.
+
 ## 0.2.6
 
 - Add a Library for PDFs, articles, experiments, claims, hypotheses, questions and other science/engineering results, with grouped sections and independent type/reading-status filters.

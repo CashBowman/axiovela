@@ -128,3 +128,22 @@ The implementation adapts Axiovela Math's annotation, article extraction, PDF re
 Connections patterns. Primary implementation references: [PDF.js rendering](https://mozilla.github.io/pdf.js/examples/),
 [Electron native menu roles](https://www.electronjs.org/docs/latest/tutorial/menus), and
 [accessible dialogs](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/).
+
+## Interaction rendering
+
+Passage capture measures one text projection and carries the final line's viewport
+rectangle with the draft. Figure capture measures the image immediately. Missing
+geometry keeps the popover hidden until measured; saved notes use their visible pin.
+Feedback focuses with `preventScroll`, and dragging retains native selection.
+
+`MarkdownPreview` memoizes the rendered tree from content and display/image mapping
+dependencies; event callbacks stay current through refs. Annotation arrays/configs
+are stable between content changes, and overlay-only mutations do not remeasure
+the document. Polling compares complete assistant snapshots, including errors and
+activity freshness. The activity timer remains active only during replies.
+
+Run `npm run interaction:smoke` for rendering invalidation/callback contracts, and
+`PERF_LABEL=local PERF_ASSERT=1 npm run interaction:perf` for the isolated long-text
+benchmark. `AXIOVELA_PERF_BINARY` selects a packaged executable; `PERF_EVIDENCE`
+sets the CPU profile, JSON and screenshot directory. Timings describe entire typing
+sequences, not field INP. See the 0.2.7 release notes for recorded measurements.

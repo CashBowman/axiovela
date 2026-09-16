@@ -2,17 +2,18 @@ import {FeedbackContext} from './WorkspaceFeedback.jsx';
 import {outputDirectives,sourceForReference} from '../shared/assistant-output.mjs';
 import {SavedDocumentReader} from './Library.jsx';
 import {downloadSource, exportRenderedPdf} from './document-export.js';
-import React, {useContext,useState} from 'react';
+import React, {useContext,useMemo,useState} from 'react';
 import MarkdownPreview from './MarkdownPreview.jsx';
 
 export default function ChatContent({source, assetUrl, renderDocument}) {
-  const context=useContext(FeedbackContext),formatted=outputDirectives(source);
-  const readable=formatted.text.replace(/\[Source (\d+)\]\(axiovela-source:(\d+)\)/g,(_,number,index)=>{const p=sourceForReference(formatted.references[Number(index)],context?.sources||[]);return p?'['+p.title.replace(/[\[\]]/g,'')+'](#library-source-'+p.id+')':'[Source '+number+']';}).replace(/\[([^\]]+)\]\(axiovela-followup:\d+\)/g,'$1');
+  const context=useContext(FeedbackContext),formatted=useMemo(()=>outputDirectives(source),[source]);
+  const readable=useMemo(()=>formatted.text.replace(/\[Source (\d+)\]\(axiovela-source:(\d+)\)/g,(_,number,index)=>{const p=sourceForReference(formatted.references[Number(index)],context?.sources||[]);return p?'['+p.title.replace(/[\[\]]/g,'')+'](#library-source-'+p.id+')':'[Source '+number+']';}).replace(/\[([^\]]+)\]\(axiovela-followup:\d+\)/g,'$1'),[formatted,context?.sources]);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const documents = [...source.matchAll(/```(latex|tex|markdown|md)\s*\n([\s\S]*?)```/gi)].map(match => ({format: /^(latex|tex)$/i.test(match[1]) ? 'latex' : 'markdown', source: match[2]}));
+  const documents = useMemo(() => { const documents = [...source.matchAll(/```(latex|tex|markdown|md)\s*\n([\s\S]*?)```/gi)].map(match => ({format: /^(latex|tex)$/i.test(match[1]) ? 'latex' : 'markdown', source: match[2]}));
   if (!documents.length && /^\s*\\documentclass/.test(source)) documents.push({format: 'latex', source});
+  return documents; }, [source]);
   const render = async (document, pdf = false) => {
     setBusy(true); setError('');
     try { const rendered = await renderDocument(document); setResult(rendered); if (pdf) await exportRenderedPdf(rendered); } catch (e) { setError(e.message); } finally { setBusy(false); }

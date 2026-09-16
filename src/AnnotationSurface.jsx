@@ -2,18 +2,20 @@ import {MessageSquarePlus} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {
   capturePassage,
+  hasContentMutation,
   textProjection,
   rangeFromAnchor,
   rangeRects,
 } from "./annotation-dom.mjs";
 
+const emptyAnnotations = [];
 export default function AnnotationSurface({
   children,
   rootRef,
   textRef,
   className = "",
   annotating = false,
-  annotations = [],
+  annotations = emptyAnnotations,
   draft,
   onCapture,
   onSelect,
@@ -46,7 +48,7 @@ export default function AnnotationSurface({
       setImages(old=>JSON.stringify(old)===JSON.stringify(next)?old:next);
     });};
     const resize=new ResizeObserver(update);resize.observe(element);
-    const mutation=new MutationObserver(update);mutation.observe(target,{subtree:true,childList:true,attributes:true,attributeFilter:['src']});
+    const mutation=new MutationObserver(records => { if (hasContentMutation(records)) update(); });mutation.observe(target,{subtree:true,childList:true,attributes:true,attributeFilter:['src']});
     target.addEventListener('load',update,true);window.addEventListener('resize',update);document.addEventListener('scroll',update,true);update();
     return()=>{cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();target.removeEventListener('load',update,true);window.removeEventListener('resize',update);document.removeEventListener('scroll',update,true);};
   },[annotating,textRef,pageScale]);
@@ -127,7 +129,7 @@ export default function AnnotationSurface({
     };
     const resize = new ResizeObserver(update);
     resize.observe(element);
-    const mutation = new MutationObserver(update);
+    const mutation = new MutationObserver(records => { if (hasContentMutation(records)) update(); });
     mutation.observe(target, {
       subtree: true,
       childList: true,
@@ -156,12 +158,12 @@ export default function AnnotationSurface({
       return;
     if (event.target.closest(".annotationSurface") !== root.current) return;
     const target = textRef?.current || root.current;
-    const anchor = capturePassage(target, event, { exact });
+    const projection = textProjection(target);
+    const anchor = capturePassage(target, event, { exact, projection });
     if (anchor) {
-      const rect = rangeRects(
-        rangeFromAnchor(textProjection(target), anchor),
-        root.current,
-      )[0];
+      const rects = rangeRects(rangeFromAnchor(projection, anchor), root.current);
+      const rect = rects[0], last = rects.at(-1), base = root.current.getBoundingClientRect();
+      const position = last && {left:base.left+last.left,top:base.top+last.top,width:last.width,height:last.height};
       callbacks.current.onCapture?.({
         ...anchor,
         ...(event.type === "keydown" ? { focusFeedback: true } : {}),
@@ -172,7 +174,7 @@ export default function AnnotationSurface({
               y: (rect?.top || 0) / pageScale,
             }
           : {}),
-      });
+      }, position, projection);
     }
   }
   let lastPinTop = -24;
@@ -217,7 +219,7 @@ export default function AnnotationSurface({
     >
       {children}
       <div className="annotationOverlay" data-annotation-ui="true">
-        {annotating && images.map(img=><button key={img.index} type="button" className="figureFeedbackButton surfaceFigureFeedback" style={{left:img.left,top:img.top}} aria-label={'Add feedback on '+img.quote} title="Add image feedback" onMouseUp={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();callbacks.current.onCapture?.({kind:'figure',figureIndex:img.index,asset:img.src,quote:img.quote,start:0,end:img.quote.length,line:img.line,focusFeedback:true});}}><MessageSquarePlus size={16}/></button>)}
+        {annotating && images.map(img=><button key={img.index} type="button" className="figureFeedbackButton surfaceFigureFeedback" style={{left:img.left,top:img.top}} aria-label={'Add feedback on '+img.quote} title="Add image feedback" onMouseUp={e=>e.stopPropagation()} onClick={e=>{e.stopPropagation();callbacks.current.onCapture?.({kind:'figure',figureIndex:img.index,asset:img.src,quote:img.quote,start:0,end:img.quote.length,line:img.line,focusFeedback:true}, (textRef?.current || root.current).querySelectorAll('img')[img.index]?.getBoundingClientRect());}}><MessageSquarePlus size={16}/></button>)}
         {positioned.map((mark) => (
           <React.Fragment key={mark.id}>
             {mark.rects.map((r, i) => (
@@ -237,10 +239,11 @@ export default function AnnotationSurface({
                 style={{ right: 2, top: mark.pinTop }}
                 aria-label={"Comment " + mark.number}
                 title={"Comment " + mark.number}
+                data-annotation-id={mark.id}
                 onMouseUp={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
-                  callbacks.current.onSelect?.(mark.id);
+                  callbacks.current.onSelect?.(mark.id, e.currentTarget.getBoundingClientRect());
                 }}
               >
                 {mark.number}

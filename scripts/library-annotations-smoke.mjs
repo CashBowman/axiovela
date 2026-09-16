@@ -205,7 +205,13 @@ try {
     "Enter adds without starting a model turn",
   );
   assert.ok((await surface.locator(".passageHighlight").count()) > 0);
+  const pinBox = await page.getByRole("button", { name: "Comment 1", exact: true }).boundingBox();
   await page.getByRole("button", { name: "Comment 1", exact: true }).click();
+  await page.getByRole("dialog", {name:"Edit annotation"}).waitFor();
+  const editPosition = await page.locator('.annotationPopover').evaluate(el=>({box:el.getBoundingClientRect().toJSON(),width:innerWidth,height:innerHeight}));
+  assert.ok(Math.abs(editPosition.box.left-Math.max(12,Math.min(editPosition.width-332,pinBox.x)))<2,'Editing opens next to the pin');
+  assert.ok(Math.abs(editPosition.box.top-Math.max(12,Math.min(editPosition.height-230,pinBox.y+pinBox.height+10)))<2,'Editing preserves the pin position');
+
   await page
     .getByRole("textbox", { name: "Annotation feedback" })
     .fill("Clarify the first sentence.");
@@ -314,6 +320,7 @@ try {
   await select(surface, 30, { node: 1, offset: 15 });
   await page.getByRole("dialog", { name: "Add annotation" }).waitFor();
   assert.equal(await page.locator('.annotationPopover blockquote').count(),0);
+  await surface.locator(".draftHighlight").nth(1).waitFor();
   assert.ok((await surface.locator(".draftHighlight").count()) >= 2);
   // Context menus use native edit roles and right-click never dismisses the note.
   await app.evaluate(({ Menu }) => {

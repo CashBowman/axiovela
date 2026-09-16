@@ -1,6 +1,7 @@
 import { researchKinds } from "../shared/research-outline.mjs";
 import React, {
   useContext,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -43,8 +44,8 @@ export function useLibrary({ root, request, active }) {
       }),
     ]);
     if (current.current !== root) return;
-    setState(s);
-    setGraph(g);
+    setState(old => JSON.stringify(old) === JSON.stringify(s) ? old : s);
+    setGraph(old => JSON.stringify(old) === JSON.stringify(g) ? old : g);
     setSelected((old) =>
       s.papers.some((p) => p.id === old) ||
       g.nodes.some((n) => "outline:" + n.key === old)
@@ -466,12 +467,13 @@ export function LibraryReader({ library: l, apiBase = "" }) {
       ? l.selected.slice(8)
       : "paper:" + l.selected,
     item = l.graph.nodes.find((n) => n.key === key);
-  const url = (path) =>
+  const url = useCallback((path) =>
     apiBase +
     path +
     (path.includes("?") ? "&" : "?") +
     "workspace=" +
-    encodeURIComponent(l.root || "");
+    encodeURIComponent(l.root || ""), [apiBase, l.root]);
+  const imageUrl = useCallback(src => /^https?:\/\//.test(src) ? url("/api/library/image?id=" + encodeURIComponent(paper?.id) + "&url=" + encodeURIComponent(src)) : "", [url, paper?.id]);
   const context = (
     <AnnotatedContent className="graphDetails" title="Connections">
       {item ? (
@@ -573,16 +575,7 @@ export function LibraryReader({ library: l, apiBase = "" }) {
               >
                 <MarkdownPreview
                   source={paper.text || ""}
-                  assetUrl={(src) =>
-                    /^https?:\/\//.test(src)
-                      ? url(
-                          "/api/library/image?id=" +
-                            encodeURIComponent(paper.id) +
-                            "&url=" +
-                            encodeURIComponent(src),
-                        )
-                      : ""
-                  }
+                  assetUrl={imageUrl}
                 />
               </DocumentReader>
             ) : (

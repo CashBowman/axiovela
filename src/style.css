@@ -49,6 +49,13 @@
 .connectionSetup p { font-size: 11px; line-height: 1.5; }
 .connectionActions { display: flex; flex-wrap: wrap; gap: 5px; }
 
+/* Match the light workspace instead of inheriting dark native scrollbars.
+   Keep system colors and sizing available in high-contrast mode. */
+@media (forced-colors: none) {
+  :root { color-scheme: light; }
+  * { scrollbar-color: #879ba9 transparent; scrollbar-width: thin; }
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {

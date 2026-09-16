@@ -16,7 +16,7 @@ export default function AnnotationChips({
         <div className="annotationChip" key={note.id}>
           <button
             className="annotationChipBody"
-            onClick={() => onEdit?.(note)}
+            onClick={e => onEdit?.(note, e.currentTarget.getBoundingClientRect())}
             disabled={sent}
             title={
               (note.title ? note.title + "\n" : "") +

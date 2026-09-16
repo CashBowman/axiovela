@@ -19,10 +19,11 @@ export default function FigureFeedbackButton({figure, revision}) {
   const saved=notes.filter(n=>n.sourceHash===document?.hash);
   const pending=feedback.pending?.surface===identity;
   async function annotate(e){
-    e.preventDefault();e.stopPropagation();const r=e.currentTarget.getBoundingClientRect();
+    e.preventDefault();e.stopPropagation();const pin=e.currentTarget.getBoundingClientRect();
+    const r=e.currentTarget.parentElement.querySelector('img')?.getBoundingClientRect() || pin;
     const project=feedback.root,scope=feedback.scope;setBusy(true);
     try{
-      if(saved.length){feedback.edit(saved.at(-1));return;}
+      if(saved.length){feedback.edit(saved.at(-1), pin);return;}
       const doc=await feedback.request('/api/annotations/document',{method:'POST',body:JSON.stringify({target}),headers:{'x-axiovela-project':project}});
       await feedback.capture({target,source:doc.source,revision:doc.revision,surface:identity,expectedRoot:project,expectedScope:scope,position:{left:r.left,top:r.top,width:r.width,height:r.height},anchor:{kind:'figure',start:0,end:doc.source.length,quote:doc.source,focusFeedback:true}});
     }catch(error){feedback.setError(error.message);}finally{setBusy(false);}

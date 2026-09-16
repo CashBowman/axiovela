@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 
 export const conversationKey = (root, role, conversationId = '') => JSON.stringify([root || '', role, conversationId]);
 
@@ -36,6 +36,8 @@ export default function useParallelAssistant({request, onStarted, onComplete}) {
   };
   const put = record => {
     if (jobs.current[record.id]?.status !== 'running' && jobs.current[record.id] && record.status === 'running') return;
+    // Include activity, errors and permissions, not just visible output.
+    if (JSON.stringify(jobs.current[record.id]) === JSON.stringify(record)) return;
     jobs.current = {...jobs.current, [record.id]: record};
     if (mounted.current) setRecords(jobs.current);
   };
@@ -119,7 +121,8 @@ export default function useParallelAssistant({request, onStarted, onComplete}) {
     try { put(await request(`/api/assistant/${record.id}/cancel`, {method: 'POST', headers: {'x-axiovela-project': record.projectRoot}})); }
     catch (error) { put({...record, stage: `Cancellation failed: ${error.message}`}); }
   };
-  return {records: Object.values(records), pending, queue, queueError, submit, adopt, cancel,
+  const recordList = useMemo(() => Object.values(records), [records]);
+  return {records: recordList, pending, queue, queueError, submit, adopt, cancel,
     editQueued: id => updateQueue(queued.current.map(q => q.id === id && !q.sending ? {...q, editing: true, draft: q.body.message} : q)),
     draftQueued: (id, draft) => updateQueue(queued.current.map(q => q.id === id && q.editing ? {...q, draft} : q)),
     saveQueued: id => updateQueue(queued.current.map(q => q.id === id && q.editing && q.draft?.trim() ? {...q, editing: false, body: {...q.body, message: q.draft.trim()}, draft: undefined} : q)),
