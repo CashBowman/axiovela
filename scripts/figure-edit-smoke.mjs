@@ -40,8 +40,27 @@ try {
   await card.waitFor();
   await page.waitForFunction(() => [...document.querySelectorAll('.figureImage img')].some(img => img.naturalWidth === 320));
   const oldUrl = await card.locator('img').getAttribute('src');
+  const feedback=page.getByRole('button',{name:'Add feedback on Original curve',exact:true});
+  await feedback.click();
+  const popup=page.locator('.annotationPopover');
+  await popup.getByRole('textbox').fill('A canceled image note.');
+  await popup.getByRole('button',{name:'Cancel',exact:true}).click();
+  assert.equal(await page.locator('.annotationChip').count(),0);
+  await feedback.click();
+  await popup.getByRole('textbox').fill('Explain the interval in this image.');
+  await popup.getByRole('button',{name:'Add to message',exact:true}).click();
+  await page.getByRole('button',{name:'Edit feedback on Original curve',exact:true}).waitFor();
+  await page.screenshot({path:process.env.AXIOVELA_FIGURE_SCREENSHOT || '/tmp/axiovela-image-feedback.png'});
   await card.click();
   await page.waitForFunction(() => document.querySelector('.viewerCanvas img')?.naturalWidth === 320);
+  await page.locator('.figureViewer').getByRole('button',{name:'Edit feedback on Original curve',exact:true}).click();
+  assert.equal(await page.locator('.figureViewer .annotationPopover textarea').inputValue(),'Explain the interval in this image.');
+  await page.locator('.figureViewer .annotationPopover textarea').fill('Revised image feedback.');
+  await page.locator('.figureViewer .annotationPopover').getByRole('button',{name:'Add to message',exact:true}).click();
+  await page.getByRole('button',{name:'Zoom in',exact:true}).click();
+  const position=await page.locator('.viewerImageFrame').evaluate(el=>{const img=el.querySelector('img').getBoundingClientRect(),button=el.querySelector('.figureFeedbackButton').getBoundingClientRect();return {right:img.right-button.right,bottom:img.bottom-button.bottom};});
+  assert.ok(Math.abs(position.right-8)<2 && Math.abs(position.bottom-8)<2,JSON.stringify(position));
+  await page.getByRole('button',{name:'Fit',exact:true}).click();
   // Replace the same figure while its enlarged viewer is open, as an assistant
   // does when changing layout. The updated mtime can also reorder the gallery.
   await writeFile(file + '.tmp', svg(480));

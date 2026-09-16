@@ -172,6 +172,22 @@ async function windowOptions() {
 
 async function createWindow() {
   mainWindow = new BrowserWindow({...await windowOptions(), minWidth: 900, minHeight: 600, show: false, title: 'Axiovela', backgroundColor: '#edf1f4', icon: path.join(__dirname, 'icons/icon.png'), webPreferences: {preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true}});
+  mainWindow.webContents.on('context-menu', (_event, params) => {
+    const items=[];
+    if(params.isEditable) items.push({role:'cut',enabled:params.editFlags.canCut});
+    if(params.selectionText) items.push({role:'copy',enabled:params.editFlags.canCopy});
+    if(params.isEditable) items.push({role:'paste',enabled:params.editFlags.canPaste},{role:'selectAll'});
+    if(items.length) Menu.buildFromTemplate(items).popup({window:mainWindow});
+  });
+  mainWindow.webContents.on('before-input-event', (event,input) => {
+    if(input.type!=='keyDown'||!(input.control||input.meta)||!['+','=','-','0'].includes(input.key))return;
+    // Native menu accelerators otherwise consume renderer PDF shortcuts.
+    event.preventDefault();
+    const direction=input.key==='0'?'reset':input.key==='-'?'out':'in';
+    void mainWindow.webContents.executeJavaScript(`(() => { const e=new CustomEvent('axiovela-reader-zoom',{detail:${JSON.stringify(direction)},cancelable:true}); window.dispatchEvent(e); return e.defaultPrevented; })()`).then(handled=>{
+      if(!handled&&!mainWindow.isDestroyed()) mainWindow.webContents.setZoomLevel(direction==='reset'?0:mainWindow.webContents.getZoomLevel()+(direction==='out'?-0.5:0.5));
+    }).catch(()=>{});
+  });
   mainWindow.once('ready-to-show', () => mainWindow.show());
   recoverWindow = attachWindowRecovery(mainWindow, {dialog, isStopping: () => stopping || allowClose, quit: () => app.quit()});
   mainWindow.on('close', event => {

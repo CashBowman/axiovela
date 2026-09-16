@@ -1,0 +1,797 @@
+.pdfReader {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.pdfToolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 11px;
+  flex: none;
+}
+.pdfToolbar button {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+.pdfToolbar label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 11px;
+}
+.pdfToolbar input[type="number"] {
+  width: 48px;
+  min-width: 0;
+  margin: 0;
+  padding: 4px;
+  border-radius: 6px;
+}
+.pdfToolbar a {
+  margin-left: auto;
+}
+.pdfCanvasScroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 18px;
+  background: #d9e1e6;
+}
+.pdfPage {
+  position: relative;
+  margin: 0 auto;
+  background: white;
+  box-shadow: 0 2px 8px #20304025;
+}
+.pdfPage canvas {
+  display: block;
+}
+.pdfPage .textLayer {
+  position: absolute;
+  inset: 0;
+  line-height: 1;
+  opacity: 1;
+  z-index: 2;
+}
+.pdfPage .textLayer span {
+  color: transparent;
+  white-space: pre;
+  transform-origin: 0 0;
+}
+.pdfPage ::selection {
+  background: #80bfff80;
+}
+
+.pdfCommentMarker {
+  position: absolute;
+  z-index: 3;
+  width: 12px;
+  height: 12px;
+  border: 2px solid white;
+  background: var(--gold);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #735c2e;
+  transform: translate(-6px, -6px);
+  pointer-events: none;
+}
+
+/* A fixed gutter prevents fit-width/scrollbar resize loops. Pages retain their
+   dimensions while nearby canvases are loaded or replaced after zoom. */
+.pdfCanvasScroll {
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+  min-width: 0;
+  position: relative;
+  overscroll-behavior: contain;
+}
+
+.pdfPage {
+  flex: none;
+  margin: 0 auto 18px;
+  overflow: hidden;
+}
+.pdfPage:last-child {
+  margin-bottom: 0;
+}
+.pdfPaint {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
+}
+.pdfPaint .textLayer {
+  inset: 0;
+}
+.pdfPageError {
+  position: absolute;
+  inset: 12px;
+  font-size: 12px;
+}
+.pdfZoomValue {
+  font-size: 10px;
+  min-width: 30px;
+  color: var(--blue);
+}
+.pdfToolbar button {
+  color: var(--ink);
+}
+.pdfToolbar button:disabled {
+  opacity: 0.4;
+}
+.pdfReader:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: -2px;
+}
+
+.connectionsView {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+
+.graphToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 12px;
+}
+
+.graphToolbar button {
+  font-size: 11px;
+  padding: 6px 8px;
+}
+
+.graphToolbar [aria-pressed="true"] {
+  background: var(--solid-surface);
+}
+
+.graphZoom {
+  display: flex;
+  gap: 4px;
+}
+
+.graphCanvas {
+  position: relative;
+  flex: 1;
+  min-height: 280px;
+  overflow: hidden;
+  background: radial-gradient(circle, #dce6ec80, transparent);
+}
+
+.graphCanvas svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+
+.graphCanvas [role="button"] {
+  cursor: pointer;
+  outline: none;
+}
+
+.graphCanvas [role="button"]:focus-visible circle {
+  stroke: var(--gold-text);
+  stroke-width: 4;
+}
+
+.graphEmpty {
+  position: absolute;
+  inset: 45% 0;
+  text-align: center;
+  color: var(--blue);
+}
+
+.graphLegend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  font-size: 11px;
+}
+
+.graphLegend span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.graphLegend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.graphRelationships {
+  flex: none;
+  max-height: 35%;
+  overflow: auto;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+.graphLegend {
+  flex-wrap: wrap;
+  gap: 8px 14px;
+}
+
+.graphLegend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.graphLegend svg {
+  flex: none;
+}
+
+.graphInspector,
+.graphAssistant {
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+}
+
+.graphInspector {
+  max-height: 34%;
+  overflow: auto;
+}
+
+.graphInspector summary {
+  cursor: pointer;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.graphInspector .markdown {
+  padding: 8px 0;
+}
+
+.graphAssistant {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.graphAssistant small {
+  color: var(--muted);
+}
+.librarySources,
+.libraryReader {
+  height: 100%;
+  min-height: 0;
+}
+.librarySearch {
+  display: flex;
+  gap: 5px;
+  padding: 12px;
+}
+.librarySearch input {
+  width: 100%;
+  min-width: 0;
+}
+.libraryFilter {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 12px 10px;
+}
+.libraryList {
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+}
+.libraryCard {
+  padding: 14px;
+  border-top: 1px solid var(--line);
+}
+.libraryCard.selected {
+  background: #4d789811;
+}
+.sourceTitle {
+  background: none;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  font-weight: 600;
+  padding: 0;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.libraryCard > small {
+  display: block;
+  margin: 4px 0;
+  color: var(--blue);
+}
+.sourceMetadata {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 11px;
+}
+.sourceMetadata label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.sourceMetadata input {
+  width: 13px;
+  height: 13px;
+  accent-color: var(--blue);
+}
+.sourceMetadata small {
+  font-size: 10px;
+  color: var(--blue);
+  text-align: right;
+}
+.libraryReading,
+.libraryConnections {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.hiddenLibraryView {
+  position: absolute !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+.sourceOrigin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.sourceOrigin strong {
+  width: 100%;
+}
+.sourceOrigin small {
+  margin-left: auto;
+  color: var(--blue);
+}
+.documentReader {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+.readerExpand {
+  position: absolute;
+  right: 5px;
+  top: 4px;
+  z-index: 5;
+  background: var(--panel, #f3f6f8);
+}
+.documentReader .pdfToolbar {
+  padding-right: 32px;
+}
+.articleScroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 20px 28px 28px 20px;
+}
+.documentReader.expandedPanel {
+  position: fixed;
+  inset: 16px;
+  z-index: 140;
+  background: #f4f7fa;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 50px #172d4140;
+  padding: 12px;
+}
+.expandedPanel .articleScroll {
+  padding: 32px max(28px, calc((100vw - 1000px) / 2));
+}
+.graphDetails {
+  padding: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  max-height: 240px;
+  overflow: auto;
+}
+.graphDetails small {
+  display: block;
+}
+.graphDetails textarea {
+  display: block;
+  width: 100%;
+  min-height: 60px;
+}
+.connectionsView {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.graphCanvas {
+  flex: 1;
+  min-height: 250px;
+  overflow: hidden;
+}
+.graphCanvas svg {
+  width: 100%;
+  height: 100%;
+}
+.graphToolbar,
+.graphLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+.graphLegend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.graphLegend svg {
+  width: 24px;
+  height: 24px;
+}
+.graphToolbar button {
+  font-size: 11px;
+  padding: 5px 8px;
+}
+.graphZoom {
+  margin-left: auto;
+}
+.graphCanvas text {
+  font-size: 11px;
+  fill: var(--ink);
+}
+
+.inactiveLibraryWorkspace {
+  position: absolute !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  inset: 112px 24px 24px;
+  z-index: -1;
+}
+.libraryWorkspace .leftCol,
+.libraryWorkspace .middleCol,
+.libraryWorkspace .rightCol {
+  min-height: 0;
+}
+.pane.annotationSurface {
+  min-height: 0;
+}
+.annotationPopover textarea {
+  background: white;
+  border: 1px solid var(--line);
+  padding: 8px;
+  color: var(--ink);
+  font-family: inherit;
+}
+.pdfPage .annotationOverlay {
+  z-index: 3;
+}
+.pdfReader {
+  min-height: 300px;
+}
+.renderedWriteup {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+}
+.renderedWriteup .documentReader {
+  min-height: 300px;
+}
+.libraryReader {
+  position: relative;
+}
+.annotationPopover {
+  z-index: 300;
+}
+
+.revisionDialog {
+  width: 1100px;
+  max-width: 95vw;
+  background: #f4f7fa;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+}
+.revisionDialog::backdrop {
+  background: #142b4160;
+}
+.revisionColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.revisionColumns pre {
+  white-space: pre-wrap;
+  overflow: auto;
+  max-height: 60vh;
+  padding: 12px;
+  background: white;
+  font-size: 12px;
+}
+.revisionColumns section {
+  min-width: 0;
+}
+@media (max-width: 700px) {
+  .revisionColumns {
+    grid-template-columns: 1fr;
+  }
+}
+.librarySearch input,
+.libraryFilter select {
+  font: inherit;
+  font-size: 12px;
+  color: var(--ink);
+  background: var(--solid-surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 10px;
+}
+.librarySearch button {
+  border-radius: 9px;
+  padding: 6px 10px;
+  background: var(--soft-surface);
+  color: var(--ink);
+}
+.libraryFilter select {
+  max-width: 55%;
+}
+.articleScroll > .annotationSurface > .markdownPreview {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  min-height: 0;
+  line-height: 1.8;
+}
+.articleScroll a,
+.sourceOrigin a {
+  color: var(--blue);
+}
+.graphToolbar button,
+.pdfToolbar button,
+.annotationPopover button:not(.newBtn) {
+  background: var(--soft-surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+}
+.graphToolbar button[aria-pressed="true"],
+.pdfToolbar button[aria-pressed="true"] {
+  background: #4d78981c;
+}
+.graphDetails label {
+  display: block;
+  margin-top: 12px;
+}
+.graphDetails textarea {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--solid-surface);
+  font: inherit;
+}
+.pdfLink:hover {
+  background: #4d78981c;
+}
+.pdfLink:focus-visible {
+  outline: 2px solid var(--blue);
+}
+.sourceOrigin strong {
+  font-size: 12px;
+}
+.librarySearch input:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+/* Backdrop filters establish a containing block for fixed descendants. Let the
+   existing reader expand to the viewport without moving or remounting canvases. */
+.pane:has(.documentReader.expandedPanel) {
+  backdrop-filter: none;
+  overflow: visible;
+  z-index: 140;
+}
+.annotationSurface[aria-label$="annotation surface"] {
+  padding-right: 28px;
+}
+.pdfToolbar a {
+  color: var(--blue);
+}
+.pdfToolbar input[type="number"] {
+  background: var(--solid-surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font: inherit;
+}
+.chatDocumentPreview .documentReader:not(.expandedPanel) {
+  height: 440px;
+  max-height: 70vh;
+  min-height: 300px;
+}
+
+/* Fullscreen keeps the document mounted: one title/action row, one PDF row. */
+.readerTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  flex: none;
+}
+.readerTitleRow > strong {
+  font-size: 12px;
+  line-height: 1.4;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.readerTitleActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  font-size: 11px;
+}
+.readerTitleActions a {
+  color: var(--blue);
+  white-space: nowrap;
+}
+.readerTitleActions button {
+  padding: 5px;
+  display: grid;
+  place-items: center;
+}
+.readerSnapshot {
+  color: var(--blue);
+  font-size: 10px;
+}
+.documentReader.expandedPanel {
+  padding: 0;
+  overflow: hidden;
+}
+.documentReader .pdfToolbar {
+  padding: 5px 10px;
+  gap: 5px;
+  min-height: 38px;
+}
+.documentReader .pdfToolbar button {
+  min-height: 26px;
+}
+.documentReader:not(.expandedPanel) .readerSnapshot {
+  display: none;
+}
+.documentReader:not(.expandedPanel) .readerTitleRow {
+  flex-wrap: wrap;
+}
+.documentReader:not(.expandedPanel) .readerTitleRow > strong {
+  white-space: normal;
+}
+@media (max-width: 1100px) {
+  .readerSnapshot {
+    display: none;
+  }
+}
+.researchItemMetadata {
+  font-size: 11px;
+  color: var(--blue);
+  margin-bottom: 12px;
+}
+.mainResultLabel {
+  font-size: 10px;
+  color: var(--gold-text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px 5px;
+  white-space: nowrap;
+}
+.researchCard {
+  border-radius: 10px;
+  margin: 5px;
+  border: 1px solid var(--line);
+}
+.graphEdge .edgeHit {
+  pointer-events: stroke;
+}
+.graphEdge:focus-visible .edgeLine {
+  stroke: var(--gold-text);
+  stroke-width: 4;
+  opacity: 1;
+}
+.graphCanvas [data-node]:focus-visible > polygon,
+.graphCanvas [data-node]:focus-visible > rect,
+.graphCanvas [data-node]:focus-visible > path,
+.graphCanvas [data-node]:focus-visible > g > *:not(text) {
+  stroke: var(--gold-text);
+  stroke-width: 4;
+}
+.connectionDetail {
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  max-height: 42%;
+  overflow: auto;
+  flex: none;
+  font-size: 12px;
+}
+.connectionDetailHead,
+.connectionEndpoints {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.connectionDetailHead {
+  justify-content: space-between;
+}
+.connectionEndpoints {
+  margin: 8px 0;
+}
+.connectionEndpoints button,
+.relationshipSelect {
+  background: transparent;
+  color: var(--blue);
+  text-align: left;
+  border: 0;
+  padding: 2px;
+}
+.connectionDetail .markdownPreview,
+.graphDetails .markdownPreview {
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  min-height: 0;
+}
+.connectionCaveat {
+  font-size: 11px;
+  color: var(--blue);
+}
+.graphDetails small {
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+
+.graphCanvas [data-node]:focus-visible > ellipse {
+  stroke: var(--gold-text);
+  stroke-width: 4;
+}
+.graphDetails .markdownPreview h1 {
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+
+.libraryGroup + .libraryGroup { border-top:1px solid var(--line); margin-top:12px; padding-top:10px; }
+.libraryGroup > h3 { display:flex; justify-content:space-between; align-items:center; margin:0 4px 8px; font-size:11px; font-weight:600; color:var(--muted); }
+.libraryGroup > h3 span { font-weight:400; font-size:10px; }
+.libraryFilter { flex-wrap:wrap; gap:6px; }
+.libraryFilter select { min-width:0; flex:1; font-size:11px; }
+.libraryFilter .textButton { font-size:10px; }
+.librarySources .sourceMetadata input[type=checkbox] { appearance:none; display:inline-block; flex:none; width:14px; height:14px; margin:0 5px 0 0; border:1px solid #8da3b0; border-radius:4px; background:#f5f8fa; vertical-align:middle; cursor:pointer; }
+.librarySources .sourceMetadata input[type=checkbox]:checked { border-color:#4d7898; background:#f5f8fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cpath d='m3 7 2.5 2.5L11 4' fill='none' stroke='%234d7898' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/14px no-repeat; }
+.librarySources .sourceMetadata input[type=checkbox]:focus-visible { outline:2px solid var(--blue); outline-offset:2px; }

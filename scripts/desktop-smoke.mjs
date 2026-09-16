@@ -21,7 +21,7 @@ if (packaged && !((process.env.AXIOVELA_TEST_INSTALLED_ROOT || process.env.HYPOT
 const executablePath = packaged ? process.platform === 'darwin' ? path.join(appDir, 'Axiovela.app/Contents/MacOS/axiovela') : path.join(appDir, process.platform === 'win32' ? 'axiovela.exe' : 'axiovela') : electronBinary;
 if (packaged) {
   const contents = process.platform === 'darwin' ? path.join(appDir, 'Axiovela.app/Contents/Resources/app') : path.join(appDir, 'resources/app');
-  assert.deepEqual((await readdir(contents)).sort(), ['BETA_NOTICE.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'desktop', 'dist', 'examples', 'node_modules', 'package.json', 'project-template', 'server', 'src']);
+  assert.deepEqual((await readdir(contents)).sort(), ['BETA_NOTICE.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', 'desktop', 'dist', 'examples', 'node_modules', 'package.json', 'project-template', 'server', 'shared', 'src']);
   for (const file of await readdir(contents, {recursive: true})) {
     assert.ok(!/(?:^|[/\\])(?:\.git|\.env|auth\.json|credentials\.json|providers\.json|\.npmrc)(?:[/\\]|$)/i.test(file), `Private file in packaged app: ${file}`);
     const full = path.join(contents, file);

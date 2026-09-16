@@ -25,7 +25,7 @@ const run = (args, options = {}) => new Promise((resolve, reject) => {
 });
 let server, child;
 try {
-  for (const file of ['package.json', 'package-lock.json', 'index.html', 'bin', 'scripts', 'src', 'server', 'public', 'project-template']) await cp(path.join(repo, file), path.join(checkout, file), {recursive: true});
+  for (const file of ['package.json', 'package-lock.json', 'index.html', 'bin', 'scripts', 'src', 'server', 'shared', 'public', 'project-template']) await cp(path.join(repo, file), path.join(checkout, file), {recursive: true});
   const install = await run([path.join(checkout, 'scripts/install.mjs')]);
   assert.equal(install.code, 0, install.output);
   await access(path.join(prefix, process.platform === 'win32' ? 'axiovela.cmd' : 'bin/axiovela'));

@@ -1,3 +1,8 @@
+import ProjectNavigator from './ProjectNavigator.jsx';
+import WorkspaceFeedback,{FeedbackContext,useFeedback,FeedbackChips,AnnotatedContent} from './WorkspaceFeedback.jsx';
+import AnnotationChips from './AnnotationChips.jsx';
+import RevisionReview from './RevisionReview.jsx';
+import {useLibrary,LibrarySources,LibraryReader,DocumentReader} from './Library.jsx';
 import PromptQueue from './PromptQueue.jsx';
 import useParallelAssistant, {conversationKey} from './useParallelAssistant.js';
 import {exportRenderedPdf} from './document-export.js';
@@ -30,7 +35,7 @@ import {chatMarkdown, figureTitle} from './research-model.mjs';
 const MarkdownPreview = lazy(() => import('./MarkdownPreview.jsx'));
 const ChatContent = lazy(() => import('./ChatContent.jsx'));
 
-const tabs = ['Results', 'Methods', 'Trials', 'Write-up'];
+const tabs = ['Results', 'Methods', 'Trials', 'Library', 'Write-up'];
 
 const messages0 = [
   ['bot', 'Describe the experiment you want to run or the results you want to understand.'],
@@ -292,7 +297,7 @@ function Pill({children, tone = 'blue'}) {
 }
 
 function Pane({title, children, tag, action}) {
-  return <section className="pane"><header className="paneHead"><div>{tag && <Pill tone={tag.tone}>{tag.label}</Pill>}<strong>{title}</strong></div>{action}</header>{paneHints[title] && <p className="paneHint paneIntro">{paneHints[title]}</p>}{children}</section>;
+  return <AnnotatedContent className="pane" title={title}><header data-annotation-ui="true" className="paneHead"><div>{tag && <Pill tone={tag.tone}>{tag.label}</Pill>}<strong>{title}</strong></div>{action}</header>{paneHints[title] && <p className="paneHint paneIntro">{paneHints[title]}</p>}{children}</AnnotatedContent>;
 }
 
 function Chart() {
@@ -443,7 +448,7 @@ function WriteupAssetsPane({projectRoot, artifacts = [], runs = [], bibliography
 function RenderedWriteup({format, exportWriteup, exportPdf, pdfBusy, draftText, compileResult, compileLatex, bibliography, projectActive, projectRoot}) {
   const renderedMarkdown = markdownWithCitations(draftText, bibliography?.entries || []);
   const empty = !draftText.trim();
-  return <article className="renderedWriteup"><div className="previewToolbar"><p className="eyebrow">{format === 'latex' ? 'PDF DOCUMENT PREVIEW' : 'MARKDOWN PREVIEW'}</p><span className="previewButtons">{format === 'latex' && <button className="newBtn" onClick={compileLatex} disabled={!projectActive || empty || compileResult?.status === 'running'}>{compileResult?.status === 'running' ? 'Rendering…' : 'Render document'}</button>}<button className="lightBtn" onClick={exportWriteup} disabled={!projectActive || empty}><Download size={15}/> Export source</button><button className="lightBtn" onClick={exportPdf} disabled={!projectActive || empty || pdfBusy}>{pdfBusy ? 'Exporting…' : 'Export PDF'}</button></span></div>{compileResult?.error ? <div className="compileError"><b>Document could not be rendered</b><p>{compileResult.error}</p>{compileResult.details?.hint && <p>{compileResult.details.hint}</p>}{compileResult.details?.log && <code>{compileResult.details.log}</code>}</div> : format === 'latex' ? compileResult?.url ? <iframe className="pdfPreview" title="Compiled LaTeX document" src={`${apiBase}${compileResult.url}#toolbar=0`}/> : <div className="emptyResearch"><FileText size={20}/><p>{projectActive ? (empty ? 'No document yet. Write here or ask the Research Assistant to create a complete LaTeX paper, then select Render document.' : 'Select Render document to compile the complete LaTeX source with Tectonic.') : 'Choose or create a project to start a LaTeX or Markdown document.'}</p></div> : empty ? <div className="emptyResearch"><FileText size={20}/><p>{projectActive ? 'No Markdown document yet. Write here or ask the Research Assistant to create one.' : 'Choose or create a project to start a document.'}</p></div> : <Suspense fallback={<div className="markdownPreview"/>}><MarkdownPreview source={renderedMarkdown} assetUrl={src => markdownAssetUrl(src, projectRoot)}/></Suspense>}</article>;
+  return <article className="renderedWriteup"><div className="previewToolbar"><p className="eyebrow">{format === 'latex' ? 'PDF DOCUMENT PREVIEW' : 'MARKDOWN PREVIEW'}</p><span className="previewButtons">{format === 'latex' && <button className="newBtn" onClick={compileLatex} disabled={!projectActive || empty || compileResult?.status === 'running'}>{compileResult?.status === 'running' ? 'Rendering…' : 'Render document'}</button>}<button className="lightBtn" onClick={exportWriteup} disabled={!projectActive || empty}><Download size={15}/> Export source</button><button className="lightBtn" onClick={exportPdf} disabled={!projectActive || empty || pdfBusy}>{pdfBusy ? 'Exporting…' : 'Export PDF'}</button></span></div>{compileResult?.error ? <div className="compileError"><b>Document could not be rendered</b><p>{compileResult.error}</p>{compileResult.details?.hint && <p>{compileResult.details.hint}</p>}{compileResult.details?.log && <code>{compileResult.details.log}</code>}</div> : format === 'latex' ? compileResult?.url ? <DocumentReader target={{kind:"writeup",format}} source={compileResult.annotationSource ?? draftText} revision={compileResult.annotationBibliography ?? bibliography?.source ?? ""} url={`${apiBase}${compileResult.url}`} title="Compiled LaTeX document"/> : <div className="emptyResearch"><FileText size={20}/><p>{projectActive ? (empty ? 'No document yet. Write here or ask the Research Assistant to create a complete LaTeX paper, then select Render document.' : 'Select Render document to compile the complete LaTeX source with Tectonic.') : 'Choose or create a project to start a LaTeX or Markdown document.'}</p></div> : empty ? <div className="emptyResearch"><FileText size={20}/><p>{projectActive ? 'No Markdown document yet. Write here or ask the Research Assistant to create one.' : 'Choose or create a project to start a document.'}</p></div> : <DocumentReader target={{kind:"writeup",format}} source={draftText} revision={bibliography?.source||""} title="Rendered write-up"><Suspense fallback={<div className="markdownPreview"/>}><MarkdownPreview source={renderedMarkdown} assetUrl={src => markdownAssetUrl(src, projectRoot)} onSourceLine={line=>window.dispatchEvent(new CustomEvent("axiovela-source-line",{detail:line}))}/></Suspense></DocumentReader>}</article>;
 }
 
 function EditorNotes({format}) {
@@ -475,7 +480,7 @@ function AgentRoster({activity}) {
   return <div className="agentRoster" aria-label="Agent activity"><span className="agentChip"><i className="agentDot working"/><b>Pi router</b><small>working</small></span>{workers.map(worker => <span className="agentChip" key={worker.name} title={`${worker.name}: ${agentStatusLabel(worker.status)}`}><i className={`agentDot ${worker.status}`}/><b>{workerLabel(worker.name)}</b><small>{agentStatusLabel(worker.status)}</small></span>)}{activity?.checkedAt && workers.length === 0 && <span className="routerOnly">No workers yet</span>}</div>;
 }
 
-function ChatbotPane({title = 'Experiment Chatbot', messages, input, setInput, send, attach, dropAttachment, attachmentName, clearAttachment, busy, attachmentBusy, assistantProgress, assistantEvents = [], lastActivityAt, statusError, agenticActivity, permissionMode, setPermissionMode, cancelAssistant, modelControl, conversationControl, queueControl, engineName, renderDocument, supportedModes, projectRoot, ready, agenticMode = false, setAgenticMode, agentic, agenticStarting}) {
+function ChatbotPane({annotationCount=0,request,onApplied,beforeApply,title = 'Experiment Chatbot', messages, input, setInput, send, attach, dropAttachment, attachmentName, clearAttachment, busy, attachmentBusy, assistantProgress, assistantEvents = [], lastActivityAt, statusError, agenticActivity, permissionMode, setPermissionMode, cancelAssistant, modelControl, conversationControl, queueControl, engineName, renderDocument, supportedModes, projectRoot, ready, agenticMode = false, setAgenticMode, agentic, agenticStarting}) {
   const accessHelpId = useId();
   const [accessHelpOpen, setAccessHelpOpen] = useState(false);
   const accessHelp = 'Access applies to the next message. Read-only does not show approval dialogs; native integrations retain their own tool policies. Full access can change files, install packages, and run commands with your account’s permissions.' + (agenticMode ? ' Agentic mode uses Pi with Full access.' : engineName === 'Pi' ? ' Pi supports Read-only and Full access; Auto-approve is unavailable.' : '');
@@ -489,6 +494,8 @@ function ChatbotPane({title = 'Experiment Chatbot', messages, input, setInput, s
       {messages.map(([who, text, id, role, record], i) => <div key={id || i} className={'message ' + (who === 'bot' ? 'ai' : who)}><div className="messageBody">
         {who === 'bot' ? <Suspense fallback={<span>{!id ? welcome : text}</span>}><ChatContent source={chatMarkdown(!id ? welcome : text, projectRoot)} assetUrl={src => /^(?:\.\.?\/)?(?:artifacts\/figures|exports)\//.test(src) ? markdownAssetUrl(src, projectRoot) : ''} renderDocument={renderDocument}/></Suspense> : <PromptText text={text}/>}
         {id && <CopyMessage text={text}/>}
+        {who === "user" && <AnnotationChips notes={record?.annotations||[]} sent/>}
+        {who === "bot" && record?.review && <RevisionReview record={record} request={request} beforeApply={beforeApply} onApplied={onApplied}/>}
         {who === 'bot' && record?.effective && <details className="chatRunDetails"><summary>{record.agenticMode ? 'Agentic run' : 'Model used'}</summary><p>{record.agenticMode ? 'Pi router' : record.selection?.adapterId} · {record.effective.modelId || 'Not reported'} · {record.effective.effort || 'Runtime default'}</p>{record.agenticMode && <p>{record.agenticActivity?.workers?.length ? `Herdr workers: ${record.agenticActivity.workers.map(worker => `${workerLabel(worker.name)} (${agentStatusLabel(worker.status)})`).join(', ')}.` : record.agenticActivity?.checkedAt ? 'Router only; no Herdr workers were launched for this task.' : 'Worker activity was not recorded for this earlier run.'}</p>}{record.usage?.tokens && <p>{record.agenticMode ? 'Router usage' : 'Usage'}: {compactCount(record.usage.tokens.input + record.usage.tokens.output)} input/output · {compactCount(record.usage.tokens.cacheRead)} cached{record.usage.cost ? ` · $${record.usage.cost.toFixed(3)}` : ''}.</p>}{record.handoff && <p>Recent conversation context restored.</p>}</details>}
         {who === 'user' && record?.artifactPath && <small className="attachedFigureLabel">Attached figure: {record.artifactPath}</small>}
       </div></div>)}
@@ -497,11 +504,12 @@ function ChatbotPane({title = 'Experiment Chatbot', messages, input, setInput, s
     </div></div>
     {scroll.showLatest && <button className="jumpLatest" onClick={scroll.jump}>Jump to latest ↓</button>}
     {queueControl}
+    <FeedbackChips/>
     {attachmentName && <div className="attachmentChip"><Paperclip size={13}/><span>{attachmentName}</span><button onClick={clearAttachment} aria-label="Remove attachment"><X size={13}/></button></div>}
     <div className="composer chatDropTarget" onDragOver={event => { if (event.dataTransfer.types.includes('application/x-workbench-artifact') || event.dataTransfer.files.length) event.preventDefault(); }} onDrop={event => { if (event.dataTransfer.files.length) { event.preventDefault(); if (!busy && projectRoot) { const directory = [...event.dataTransfer.items].some(item => item.webkitGetAsEntry?.()?.isDirectory); attach(directory ? {error: new Error('Use Attach folder to import a directory with its contents.')} : {files: [...event.dataTransfer.files]}); } return; } if (!event.dataTransfer.types.includes('application/x-workbench-artifact')) return; event.preventDefault(); if (!busy) dropAttachment(event.dataTransfer.getData('application/x-workbench-artifact')); }}>
       <ChatTextarea aria-label={`${title} message`} value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send(); } }} placeholder={busy ? 'Write a follow-up to queue…' : title === 'Research Assistant' ? 'Ask for a draft, revision, citation, or figure…' : 'Ask about this project or drop a figure…'} disabled={attachmentBusy}/>
       <DataPicker compact onSelect={attach} disabled={busy || !projectRoot}/>
-      <button onClick={() => send()} aria-label={busy ? "Queue message" : "Send"} title={busy ? "Send after the current task finishes" : "Send message"} disabled={!ready || attachmentBusy || !input.trim() || !supportedModes.includes(permissionMode)}><Send size={16}/></button>
+      <button onClick={() => send()} aria-label={busy ? "Queue message" : "Send"} title={busy ? "Send after the current task finishes" : "Send message"} disabled={!ready || attachmentBusy || (!input.trim() && !annotationCount) || !supportedModes.includes(permissionMode)}><Send size={16}/></button>
     </div>
     <div className="chatFooter"><div className="modelControl">{modelControl}</div><div className="chatToolbar"><label>Access<select value={permissionMode} onChange={event => setPermissionMode(event.target.value)} disabled={busy || agenticMode}>
       <option value="ask" disabled={!supportedModes.includes('ask')}>Read-only</option><option value="auto" disabled={!supportedModes.includes('auto')}>Auto-approve</option><option value="full" disabled={!supportedModes.includes('full')}>Full access</option>
@@ -561,7 +569,7 @@ function App() {
   const draftKey = `${role}:${conversationId}`;
   const [inputs, setInputs] = useState({experiment: '', writing: ''});
   const input = inputs[draftKey] || '';
-  const setInput = value => setInputs(current => ({...current, [draftKey]: value}));
+  const setInput = value => setInputs(current => { const next={...current,[draftKey]:value}; persistComposer(next,undefined); return next; });
   const [capabilities, setCapabilities] = useState(null);
   const [modelLoading, setModelLoading] = useState(true);
   const [historyReady, setHistoryReady] = useState(false);
@@ -571,7 +579,7 @@ function App() {
   const [attachments, setAttachments] = useState({});
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const chatAttachment = attachments[draftKey];
-  const setChatAttachment = value => setAttachments(current => ({...current, [draftKey]: value}));
+  const setChatAttachment = value => setAttachments(current => {const next={...current,[draftKey]:value};persistComposer(undefined,next);return next;});
   const [permissionMode, setPermissionMode] = useState(loadPermissionMode);
   const [agenticChoices, setAgenticChoices] = useState(() => { try { const value = JSON.parse(localStorage.getItem('axiovela-agentic-choices') || '{}'); return value && typeof value === 'object' && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).filter(([, enabled]) => typeof enabled === 'boolean')) : {}; } catch { return {}; } });
   const [agenticStarting, setAgenticStarting] = useState(false);
@@ -591,6 +599,7 @@ function App() {
   };
   const parallel = useParallelAssistant({request: unscopedRequest,
     onStarted: (record, item) => {
+      feedback.move(item.key,conversationKey(record.projectRoot,record.role,record.conversationId));
       if (projectRootRef.current !== item.root) return;
       setActiveConversations(current => {
         if ((current[record.role] || '') !== (item.body.conversationId || '')) return current;
@@ -603,10 +612,12 @@ function App() {
     },
     onComplete: record => {
       if (projectRootRef.current !== record.projectRoot) return;
-      void Promise.all([refreshProject(), refreshWriteup(writeupFormatRef.current), refreshBibliography()]).catch(() => {});
+      void Promise.all([refreshProject(), refreshWriteup(writeupFormatRef.current), refreshBibliography(), apiRequest('/api/library/sync',{method:'POST',body:'{}',headers:{'x-axiovela-project':record.projectRoot}})]).catch(() => {});
     },
   });
   const currentChatKey = conversationKey(projectInfo?.root, role, conversationId);
+  const feedback = useFeedback({root:projectInfo?.root,chatKey:currentChatKey,role,panel:tab,request:apiRequest,beforeSave:async target=>{if(target.kind==='writeup')await saveSource();}});
+  const library = useLibrary({root:projectInfo?.root,request:apiRequest,active:tab==='Library'});
   const activeRecord = parallel.records.find(r => r.projectRoot === projectInfo?.root && r.role === role && r.conversationId === conversationId && r.status === 'running');
   const agenticKey = conversationKey(projectInfo?.root, 'experiment', activeConversations.experiment || '');
   const experimentRecords = parallel.records.filter(record => record.projectRoot === projectInfo?.root && record.role === 'experiment' && (record.conversationId || '') === (activeConversations.experiment || ''));
@@ -626,7 +637,10 @@ function App() {
   const queuedPrompts = parallel.queue.filter(item => item.key === currentChatKey);
 
   const [projectTabs, setProjectTabs] = useState(() => { try { return JSON.parse(localStorage.getItem('axiovela-project-tabs') || '[]').filter(p => typeof p.root === 'string' && typeof p.name === 'string'); } catch { return []; } });
-  const projectDrafts = useRef({});
+  const projectDrafts = useRef(null);
+  if(!projectDrafts.current) {try{projectDrafts.current=JSON.parse(localStorage.getItem('axiovela-composer-drafts-v1')||'{}');}catch{projectDrafts.current={};}}
+  function persistComposer(nextInputs,nextAttachments){if(!projectRootRef.current)return;const next={...projectDrafts.current,[projectRootRef.current]:{inputs:nextInputs??projectDrafts.current[projectRootRef.current]?.inputs??{},attachments:nextAttachments??projectDrafts.current[projectRootRef.current]?.attachments??{},tab}};projectDrafts.current=next;try{localStorage.setItem('axiovela-composer-drafts-v1',JSON.stringify(next));}catch{setConversationError('Composer drafts could not be saved for reopening.');}}
+  useEffect(()=>{const saved=projectDrafts.current[projectInfo?.root];setInputs(saved?.inputs||{});setAttachments(saved?.attachments||{});},[projectInfo?.root]);
   useEffect(() => { if (projectInfo?.root) setProjectTabs(current => current.some(p => p.root === projectInfo.root) ? current.map(p => p.root === projectInfo.root ? {root: projectInfo.root, name: projectInfo.name} : p) : [...current, {root: projectInfo.root, name: projectInfo.name}]); }, [projectInfo?.root]);
   useEffect(() => { localStorage.setItem('axiovela-project-tabs', JSON.stringify(projectTabs)); }, [projectTabs]);
   const [projectDialog, setProjectDialog] = useState(false);
@@ -673,6 +687,7 @@ function App() {
   const sourceBaseline = useRef('');
   const draftValue = useRef('');
   const writeupEditorRef = useRef(null);
+  useEffect(()=>{const jump=e=>{const editor=writeupEditorRef.current;if(!editor)return;const at=editor.value.split('\n').slice(0,Math.max(0,e.detail-1)).join('\n').length;editor.focus();editor.setSelectionRange(at,at);editor.scrollTop=Math.max(0,(e.detail-4)*20);};window.addEventListener('axiovela-source-line',jump);return()=>window.removeEventListener('axiovela-source-line',jump);},[]);
   const sourceIdentity = useRef({root: '', format: 'latex'});
   const saveFlight = useRef(null);
   const saveLatest = useRef(null);
@@ -925,18 +940,19 @@ function App() {
     } catch (error) { setConversationError(error.message); }
     finally { setConversationBusy(false); }
   };
-  const openProject = async (selectedPath = projectPath, initializeGit = false) => {
+  const openProject = async (selectedPath = projectPath, initializeGit = false, create = true) => {
     if (projectBusy || attachmentBusy || sourceBusy) return;
     projectDrafts.current[projectInfo?.root] = {inputs, attachments, tab};
     setProjectBusy(true); setProjectError(''); setHistoryReady(false);
     try {
       if (projectAssistantBusy) rememberDraft(); else await saveSource();
-      const project = await apiRequest('/api/project/open', {method: 'POST', body: JSON.stringify({path: selectedPath, create: true, initializeGit})});
+      const project = await apiRequest('/api/project/open', {method: 'POST', body: JSON.stringify({path: selectedPath, create, initializeGit})});
       projectRootRef.current = project.root;
       const nextFormat = preferredWriteupFormat(project.root, project.writeups);
       setWriteupFormat(nextFormat);
       setInputs(projectDrafts.current[project.root]?.inputs || {}); setAttachments(projectDrafts.current[project.root]?.attachments || {}); setConversationError('');
       setProjectInfo(project); setProjectPath(project.root); setRunRecords(project.runs || []); setCompileResult(null); setFigureUploadStatus(''); await Promise.all([refreshWriteup(nextFormat, true, project.root), refreshBibliography(), refreshAssistantHistory(project.root)]); setProjectDialog(false); setTab(projectDrafts.current[project.root]?.tab || 'Results');
+      return project;
     } catch (error) { setProjectError(error.message); }
     finally { setProjectBusy(false); setHistoryReady(true); }
   };
@@ -966,19 +982,23 @@ function App() {
   };
 
   const send = async suggestion => {
-    const message = (typeof suggestion === 'string' ? suggestion : input).trim();
-    if (!message || attachmentBusy || agenticStarting || conversationBusy || !historyReady || modelLoading || !capabilities || !projectInfo?.root) return;
+    const annotationIds=feedback.selected.map(n=>n.id);
+    const message = (typeof suggestion === 'string' ? suggestion : input).trim() || (annotationIds.length ? 'Address the attached passage feedback.' : '');
+    if (!message || !feedback.ready || attachmentBusy || agenticStarting || conversationBusy || !historyReady || modelLoading || !capabilities || !projectInfo?.root) return;
     const root = projectInfo.root;
     const attachment = chatAttachment;
     const activeAgenticMode = role === 'experiment' && agenticMode;
     const pi = capabilities.connections?.find(connection => connection.id === 'pi');
     const selection = activeAgenticMode && selections[role].adapterId !== 'pi'
       ? {adapterId: 'pi', modelId: pi?.defaultModelId || '', effort: pi?.defaultEffort || ''} : selections[role];
-    const body = {message, attachment: attachment?.content || '', artifactPath: attachment?.artifactPath, permissionMode, agenticMode: activeAgenticMode, role, writeupFormat, defaultWriteupFormat: initialWriteupFormat, selection, conversationId: conversationId || undefined};
+    const body = {message, librarySourceId:tab==='Library'?library.selected:undefined, annotations:annotationIds, annotationSnapshots:feedback.selected.map(({id,sourceHash,comment})=>({id,sourceHash,comment})), attachment: attachment?.content || '', artifactPath: attachment?.artifactPath, permissionMode, agenticMode: activeAgenticMode, role, writeupFormat, defaultWriteupFormat: initialWriteupFormat, selection, conversationId: conversationId || undefined};
     // Preserve a local editor draft when another conversation may be editing disk.
     try {
       if (projectAssistantBusy) rememberDraft(); else await saveSource();
+      if(annotationIds.length) await apiRequest('/api/annotations/validate',{method:'POST',body:JSON.stringify({ids:annotationIds,role})});
       parallel.submit(root, body);
+      setConversationError('');
+      feedback.clear(currentChatKey, annotationIds);
       setInput(''); setChatAttachment(null);
     } catch (error) { setConversationError(error.message); }
   };
@@ -1146,7 +1166,7 @@ function App() {
   const generateWriteup = () => { setDraftText(writeupFormat === 'latex' ? latexTemplate(includedVisuals) : markdownTemplate(includedVisuals)); setWriteupGenerated(true); };
   const compileLatex = async () => {
     setCompileResult({status: 'running'});
-    try { await saveSource(); const result = await apiRequest('/api/writeups/compile', {method: 'POST', body: JSON.stringify({draftText: draftValue.current, expectedSource: draftValue.current})}); setCompileResult(result); await refreshProject(); }
+    try { await saveSource(); const result = await apiRequest('/api/writeups/compile', {method: 'POST', body: JSON.stringify({draftText: draftValue.current, expectedSource: draftValue.current})}); setCompileResult({...result,annotationSource:draftValue.current,annotationBibliography:bibliography.source}); await refreshProject(); }
     catch (error) {
       setCompileResult({status: 'failed', error: error.message, details: error.details});
       if (error.code === 'latex_engine_unavailable') setLatexSetupProblem(error.details || {});
@@ -1199,12 +1219,13 @@ function App() {
   const middle = tab === 'Write-up' ? <WriteupPreviewPane projectRoot={projectInfo?.root} exportPdf={exportPdf} pdfBusy={pdfBusy} format={writeupFormat} exportWriteup={exportWriteup} draftText={draftText} compileResult={compileResult} compileLatex={compileLatex} bibliography={bibliography} projectActive={Boolean(projectInfo?.root)}/> : ResearchMiddle({Pane, tab, project: projectInfo, selectedRun, apiBase, cancelRun: cancelTrial, runError});
   const conversationControl = <><div className="conversationToolbar"><label>Conversation<select aria-label="Conversation" value={conversationId} disabled={conversationBusy || !historyReady} onChange={event => { setConversationError(''); chooseConversations({...activeConversations, [role]: event.target.value}); }}>{!conversationId && <option value="">New conversation</option>}{conversations.filter(item => item.role === role).map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label><button onClick={newConversation} disabled={conversationBusy || !historyReady || !projectInfo?.root} title="Start a new conversation"><Plus size={14}/> New chat</button></div>{conversationError && <p className="renderError" role="alert">{conversationError}</p>}</>;
   const modelControl = <ModelPicker onConnectionOpened={() => setConnectionRequest(0)} connectionRequest={connectionRequest} role={role} selection={selections[role]} capabilities={capabilities} busy={chatBusy || conversationBusy || agenticStarting} loading={modelLoading} error={modelError} onRefresh={() => refreshModels(true)} onSave={saveModel} onSaveProfile={saveResearchProfile} onSaveConnection={saveConnection} onNewSession={newConversation}/>;
-  const assistant = <ChatbotPane key={`${role}:${conversationId}`} conversationControl={conversationControl} queueControl={<PromptQueue items={queuedPrompts} controls={parallel} chatKey={currentChatKey}/>} ready={!agenticStarting && historyReady && !conversationBusy && !modelLoading && Boolean(capabilities)} projectRoot={projectInfo?.root || ''} title={tab === 'Write-up' ? 'Research Assistant' : 'Experiment Chatbot'} messages={[...messages.filter(m => String(m[2]).startsWith('attachment-') && m[3] === role && m[4]?.conversationId === conversationId), ...assistantHistoryMessages(parallel.records.filter(r => r.projectRoot === projectInfo?.root && r.role === role && (r.conversationId || '') === conversationId)), ...(parallel.pending[currentChatKey] ? [['user', parallel.pending[currentChatKey].body.message, 'pending', role, {conversationId}]] : [])]} input={input} setInput={setInput} send={send} attach={attach} dropAttachment={dropAttachment} attachmentName={chatAttachment?.name} clearAttachment={() => setChatAttachment(null)} busy={chatBusy || attachmentBusy} attachmentBusy={attachmentBusy} assistantProgress={assistantProgress} assistantEvents={assistantEvents} lastActivityAt={activeRecord?.lastActivityAt} statusError={activeRecord?.statusError} agenticActivity={agenticActivity} permissionMode={permissionMode} setPermissionMode={setPermissionMode} cancelAssistant={cancelAssistant} modelControl={modelControl} engineName={capabilities?.connections?.find(c => c.id === selections[role].adapterId)?.name || selections[role].adapterId} renderDocument={renderChatDocument} supportedModes={capabilities?.connections?.find(c => c.id === selections[role].adapterId)?.modes || ['ask', 'auto', 'full']} agenticMode={role === 'experiment' && agenticMode} setAgenticMode={role === 'experiment' ? setAgenticMode : null} agentic={capabilities?.agentic} agenticStarting={agenticStarting}/>;
+  const assistant = <ChatbotPane beforeApply={async record=>{if(record.projectRoot!==projectRootRef.current)throw Error("The active project changed.");await saveSource();}} annotationCount={feedback.selected.length} request={apiRequest} onApplied={()=>{void refreshWriteup(writeupFormat,true);void refreshProject();}} key={`${role}:${conversationId}`} conversationControl={conversationControl} queueControl={<PromptQueue items={queuedPrompts} controls={parallel} chatKey={currentChatKey}/>} ready={feedback.ready && !agenticStarting && historyReady && !conversationBusy && !modelLoading && Boolean(capabilities)} projectRoot={projectInfo?.root || ''} title={tab === 'Write-up' ? 'Research Assistant' : 'Experiment Chatbot'} messages={[...messages.filter(m => String(m[2]).startsWith('attachment-') && m[3] === role && m[4]?.conversationId === conversationId), ...assistantHistoryMessages(parallel.records.filter(r => r.projectRoot === projectInfo?.root && r.role === role && (r.conversationId || '') === conversationId)), ...(parallel.pending[currentChatKey] ? [['user', parallel.pending[currentChatKey].body.message, 'pending', role, {conversationId}]] : [])]} input={input} setInput={setInput} send={send} attach={attach} dropAttachment={dropAttachment} attachmentName={chatAttachment?.name} clearAttachment={() => setChatAttachment(null)} busy={chatBusy || attachmentBusy} attachmentBusy={attachmentBusy} assistantProgress={assistantProgress} assistantEvents={assistantEvents} lastActivityAt={activeRecord?.lastActivityAt} statusError={activeRecord?.statusError} agenticActivity={agenticActivity} permissionMode={permissionMode} setPermissionMode={setPermissionMode} cancelAssistant={cancelAssistant} modelControl={modelControl} engineName={capabilities?.connections?.find(c => c.id === selections[role].adapterId)?.name || selections[role].adapterId} renderDocument={renderChatDocument} supportedModes={capabilities?.connections?.find(c => c.id === selections[role].adapterId)?.modes || ['ask', 'auto', 'full']} agenticMode={role === 'experiment' && agenticMode} setAgenticMode={role === 'experiment' ? setAgenticMode : null} agentic={capabilities?.agentic} agenticStarting={agenticStarting}/>;
   const right = tab === 'Write-up' ? <>{assistant}<WriteupAssetsPane projectRoot={projectInfo?.root} key={projectInfo?.root} runs={projectInfo?.runs} artifacts={projectInfo?.artifacts || []} bibliography={bibliography} editBibliography={openBibliographyEditor} insertArtifact={insertArtifact} projectActive={Boolean(projectInfo?.root)}/></> : assistant;
 
-  return <main className="app"><div className="projectStrip"><div className="projectBrand"><div className="brandMark"><WorkbenchMark/></div><div className="brand">Axiovela</div></div><div className="projectTabs" aria-label="Open projects">{projectTabs.map(project => <div key={project.root} className={project.root === projectInfo?.root ? 'activeProjectTab' : ''}><button aria-pressed={project.root === projectInfo?.root} title={project.root} disabled={projectBusy} onClick={() => project.root !== projectInfo?.root && openProject(project.root)}>{project.name}{parallel.records.some(r => r.projectRoot === project.root && r.status === 'running') && <span className="projectActivityDot" aria-label="Tasks running"> ●</span>}</button><button aria-label={`Close tab ${project.name}`} disabled={project.root === projectInfo?.root || parallel.records.some(r => r.projectRoot === project.root && r.status === 'running') || parallel.queue.some(q => q.root === project.root) || Object.values(parallel.pending).some(item => item.root === project.root)} onClick={() => setProjectTabs(current => current.filter(p => p.root !== project.root))}><X size={12}/></button></div>)}<button aria-label="Project" title="Open another project" onClick={() => setProjectDialog(true)}><Plus size={14}/></button></div></div><header className="topbar"><nav aria-label="Workspace sections">{tabs.map(x => <button onClick={() => setTab(x)} className={tab === x ? 'selected' : ''} key={x}>{x}</button>)}</nav><div className="topActions"><span className="parallelStatus" role="status">{parallel.records.filter(r => r.status === 'running').length > 0 ? `● ${parallel.records.filter(r => r.status === 'running').length} tasks running` : ''}</span><span className={`backendStatus ${backendOnline ? 'onlineStatus' : 'offlineStatus'}`} title="Local workspace connection">● {window.methodflowDesktop ? (backendOnline ? 'Ready' : 'Connecting…') : (backendOnline ? 'Backend online' : 'Backend offline')}</span><button className="lightBtn" onClick={() => setDatasetDialog(true)} disabled={!projectInfo?.root} title={projectInfo?.root ? "Import or preview project datasets" : "Open a project to link a dataset"}><Paperclip size={15}/> Link dataset</button><button className="lightBtn" onClick={resetLayout}><RefreshCcw size={15}/> Reset layout</button></div></header>
+  return <FeedbackContext.Provider value={{...feedback,sources:library.state.papers,openSource:id=>{library.setSelected(id);library.setView("read");setTab("Library");},draftFollowup:setInput}}><WorkspaceFeedback/><main className="app"><div className="projectStrip"><div className="projectBrand"><div className="brandMark"><WorkbenchMark/></div><div className="brand">Axiovela</div></div><ProjectNavigator current={projectInfo?.root} tabs={projectTabs} busy={projectBusy || attachmentBusy || sourceBusy} api={apiRequest} onBrowse={() => setProjectDialog(true)} onOpen={async (root, runId) => { const p = await openProject(root, false, false); if (!p) throw new Error("Could not open this project. Check that the folder is available."); if (runId) { setSelectedRunId(runId); setTab("Results"); } }}/><div className="projectTabs" aria-label="Open projects">{projectTabs.map(project => <div key={project.root} className={project.root === projectInfo?.root ? 'activeProjectTab' : ''}><button aria-pressed={project.root === projectInfo?.root} title={project.root} disabled={projectBusy} onClick={() => project.root !== projectInfo?.root && openProject(project.root, false, false)}>{project.name}{parallel.records.some(r => r.projectRoot === project.root && r.status === 'running') && <span className="projectActivityDot" aria-label="Tasks running"> ●</span>}</button><button aria-label={`Close tab ${project.name}`} disabled={project.root === projectInfo?.root || parallel.records.some(r => r.projectRoot === project.root && r.status === 'running') || parallel.queue.some(q => q.root === project.root) || Object.values(parallel.pending).some(item => item.root === project.root)} onClick={() => setProjectTabs(current => current.filter(p => p.root !== project.root))}><X size={12}/></button></div>)}<button aria-label="Project" title="Open another project" onClick={() => setProjectDialog(true)}><Plus size={14}/></button></div></div><header className="topbar"><nav aria-label="Workspace sections">{tabs.map(x => <button onClick={() => setTab(x)} className={tab === x ? 'selected' : ''} key={x}>{x}</button>)}</nav><div className="topActions"><span className="parallelStatus" role="status">{parallel.records.filter(r => r.status === 'running').length > 0 ? `● ${parallel.records.filter(r => r.status === 'running').length} tasks running` : ''}</span><span className={`backendStatus ${backendOnline ? 'onlineStatus' : 'offlineStatus'}`} title="Local workspace connection">● {window.methodflowDesktop ? (backendOnline ? 'Ready' : 'Connecting…') : (backendOnline ? 'Backend online' : 'Backend offline')}</span><button className="lightBtn" onClick={() => setDatasetDialog(true)} disabled={!projectInfo?.root} title={projectInfo?.root ? "Import or preview project datasets" : "Open a project to link a dataset"}><Paperclip size={15}/> Link dataset</button><button className="lightBtn" onClick={resetLayout}><RefreshCcw size={15}/> Reset layout</button></div></header>
 
-    <div ref={workspaceRef} className="workspace" style={{'--left-width': `${columnWidths[0]}fr`, '--middle-width': `${columnWidths[1]}fr`, '--right-width': `${columnWidths[2]}fr`}}><ResizeColumn className="leftCol" split={rowSplits.left} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, left: split}}))}>{left}</ResizeColumn><button className="colResizeHandle" onPointerDown={event => startColumnResize(0, event)} aria-label="Resize left and middle columns" title="Drag to resize adjacent columns"/><ResizeColumn className="middleCol" split={rowSplits.middle} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, middle: split}}))}>{middle}</ResizeColumn><button className="colResizeHandle" onPointerDown={event => startColumnResize(1, event)} aria-label="Resize middle and right columns" title="Drag to resize adjacent columns"/><ResizeColumn className={'rightCol ' + (tab === 'Write-up' ? 'writeupRightCol' : '')} split={rowSplits.right} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, right: split}}))}>{right}</ResizeColumn></div>
+    <div ref={tab==='Library'?workspaceRef:null} className={'workspace libraryWorkspace '+(tab==='Library'?'':'inactiveLibraryWorkspace')} aria-hidden={tab!=='Library'} inert={tab!=='Library'} style={{'--left-width': `${columnWidths[0]}fr`, '--middle-width': `${columnWidths[1]}fr`, '--right-width': `${columnWidths[2]}fr`}}><ResizeColumn className="leftCol" split={rowSplits.left} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, left: split}}))}>{<LibrarySources library={library}/>}</ResizeColumn><button className="colResizeHandle" onPointerDown={event => startColumnResize(0, event)} aria-label="Resize left and middle columns" title="Drag to resize adjacent columns"/><ResizeColumn className="middleCol" split={rowSplits.middle} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, middle: split}}))}>{<LibraryReader library={library} apiBase={apiBase}/>}</ResizeColumn><button className="colResizeHandle" onPointerDown={event => startColumnResize(1, event)} aria-label="Resize middle and right columns" title="Drag to resize adjacent columns"/><ResizeColumn className={'rightCol ' + (tab === 'Write-up' ? 'writeupRightCol' : '')} split={rowSplits.right} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, right: split}}))}>{tab==='Library'?assistant:null}</ResizeColumn></div>
+    {tab!=='Library'&&<div ref={workspaceRef} className="workspace" style={{'--left-width': `${columnWidths[0]}fr`, '--middle-width': `${columnWidths[1]}fr`, '--right-width': `${columnWidths[2]}fr`}}><ResizeColumn className="leftCol" split={rowSplits.left} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, left: split}}))}>{left}</ResizeColumn><button className="colResizeHandle" onPointerDown={event => startColumnResize(0, event)} aria-label="Resize left and middle columns" title="Drag to resize adjacent columns"/><ResizeColumn className="middleCol" split={rowSplits.middle} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, middle: split}}))}>{middle}</ResizeColumn><button className="colResizeHandle" onPointerDown={event => startColumnResize(1, event)} aria-label="Resize middle and right columns" title="Drag to resize adjacent columns"/><ResizeColumn className={'rightCol ' + (tab === 'Write-up' ? 'writeupRightCol' : '')} split={rowSplits.right} onSplitChange={split => setLayout(current => ({...current, rowSplits: {...current.rowSplits, right: split}}))}>{right}</ResizeColumn></div>}
     {drawer && <aside className="drawer"><button onClick={() => setDrawer(false)} aria-label="Close methodology drawer"><X size={18}/></button><Pill tone="blue">HOW DO WE KNOW?</Pill><h2>Study methodology</h2><p>12 locally executed, seed-matched evaluations across the selected noise range.</p><hr/><b>Project scaffold</b><ProjectStructure/><hr/><b>Primary outcome</b><p>Recovery error, aggregated by matched noise setting.</p><b>Controls</b><p>Same geometry, compute budget, and initialization across both methods.</p></aside>}
     {projectDialog && <ProjectDialog pathValue={projectPath} setPathValue={setProjectPath} close={() => setProjectDialog(false)} openProject={openProject} error={projectError} busy={projectBusy}/>}
     {agenticProblem && <AgenticSetupDialog onUseApi={() => { setAgenticProblem(null); setConnectionRequest(value => value + 1); }} problem={agenticProblem} busy={agenticStarting} retry={() => setAgenticMode(true)} close={() => setAgenticProblem(null)}/>}
@@ -1212,7 +1233,7 @@ function App() {
     {datasetDialog && <DatasetDialog apiRequest={apiRequest} datasets={projectInfo?.datasets || []} refresh={refreshProject} close={() => setDatasetDialog(false)}/>}
     {bibliographyDialog && <SourceDialog kind="bibliography" source={bibliographySource} setSource={setBibliographySource} save={saveBibliography} close={() => setBibliographyDialog(false)} error={sourceError} busy={sourceBusy}/>}
     {infrastructureDialog && <SourceDialog kind="infrastructure" source={infrastructureSource} setSource={setInfrastructureSource} save={saveInfrastructure} close={() => setInfrastructureDialog(false)} error={sourceError} busy={sourceBusy}/>}
-  </main>;
+  </main></FeedbackContext.Provider>;
 }
 
 createRoot(document.getElementById('root')).render(<><App/><UpdateNotice/></>);

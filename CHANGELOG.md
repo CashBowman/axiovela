@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.6
+
+- Add a Library for PDFs, articles, experiments, claims, hypotheses, questions and other science/engineering results, with grouped sections and independent type/reading-status filters.
+- Add unsent passage and image feedback, exact native copying, revision checks, assistant routing and persistent composer attachments. Compact popovers keep familiar shortcuts without instructional captions.
+- Add a project history switcher and explained cross-project connections without merging project folders or conversations.
+- Maintain structured results during substantial research, preserve PDF reading position in compact fullscreen, and make graph-edge explanations available by mouse and keyboard.
+- See [release notes](docs/releases/0.2.6.md).
+
 ## 0.2.5
 
 - Figure edit requests now instruct assistants to reuse existing plotting source and recorded results, replace the same export and metadata entry, and keep recovery copies outside the gallery. New experiments and explicitly requested variants retain separate figures.

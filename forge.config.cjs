@@ -3,7 +3,7 @@ const mac = require('./scripts/mac-release-config.cjs').macReleaseSettings();
 
 // An allowlist prevents local research, credentials, Git history, and development
 // artifacts from entering installers. Production dependencies are pruned by Forge.
-const included = new Set(['package.json', 'LICENSE', 'BETA_NOTICE.md', 'THIRD_PARTY_NOTICES.md', 'dist', 'server', 'desktop', 'project-template', 'examples', 'node_modules']);
+const included = new Set(['package.json', 'LICENSE', 'BETA_NOTICE.md', 'THIRD_PARTY_NOTICES.md', 'dist', 'shared', 'server', 'desktop', 'project-template', 'examples', 'node_modules']);
 module.exports = {
   packagerConfig: {
     name: 'Axiovela', executableName: 'axiovela', appBundleId: 'org.methodflow.desktop',

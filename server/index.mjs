@@ -1,3 +1,7 @@
+import {createProjectCatalog} from './project-catalog.mjs';
+import {selectedLibraryContext, configureLibraryGate, importAssistantReferences, scheduleLibrarySync, libraryInstructions, libraryState, importLibrary, updateLibrary, syncLibrary, libraryPdf, libraryImage, libraryGraph} from './library.mjs';
+import {listAnnotations, saveAnnotation, prepareAnnotations, annotationDocument, revisionHash} from './annotations.mjs';
+import {reviewDraft} from '../shared/annotations.mjs';
 import {AsyncLocalStorage} from 'node:async_hooks';
 import http from 'node:http';
 import atomicFile from './atomic-file.cjs';
@@ -76,6 +80,7 @@ function defaultStatePath() {
 }
 
 const statePath = defaultStatePath();
+const projectCatalog = createProjectCatalog(path.join(path.dirname(statePath), "projects.json"));
 
 function json(res, status, payload) {
   const requestOrigin = res.req?.headers.origin;
@@ -226,6 +231,8 @@ function acquireProjectGate(mode, key = projectState.root) {
   return new Promise(resolve => { gate.queue.push({mode, resolve}); drainProjectGate(gate); });
 }
 
+configureLibraryGate(root=>acquireProjectGate('write',root));
+
 async function openProjectFromPrompt(message) {
   const request = projectRequest(message);
   if (!request) return null;
@@ -237,7 +244,7 @@ async function openProject(body) {
 
   const requested = typeof body.path === 'string' ? body.path.trim() : '';
   if (!requested) throw new Error('An absolute or relative project directory is required');
-  const candidate = await resolveHumanPath(requested);
+  let candidate = await resolveHumanPath(requested);
   let created = false;
   try {
     const info = await stat(candidate);
@@ -247,12 +254,14 @@ async function openProject(body) {
     await mkdir(candidate, {recursive: true});
     created = true;
   }
+  candidate = await realpath(candidate);
   const priorRoot = projectState.root;
   projectState.root = candidate;
   const release = await acquireProjectGate('write');
   try {
     await ensureProject({initializeGit: body.initializeGit === true});
     await persistAppState();
+    await projectCatalog.remember(candidate);
     openedProjects.add(candidate);
     defaultProject.root = candidate;
     return {...await projectSummary(), created};
@@ -572,13 +581,13 @@ async function uploadFigure(body) {
   return {kind: 'artifact-upload', artifact: {name: path.basename(relative), path: relative, type: 'png', modifiedAt: info.mtime.toISOString()}};
 }
 
-async function parseBody(req) {
+async function parseBody(req, limit = maxBodyBytes) {
   req.setTimeout(120_000, () => req.destroy(new Error('Request body stalled')));
   let total = 0;
   const chunks = [];
   for await (const chunk of req) {
     total += chunk.length;
-    if (total > maxBodyBytes) throw Object.assign(new Error('Request body is too large'), {status: 413});
+    if (total > limit) throw Object.assign(new Error('Request body is too large'), {status: 413});
     chunks.push(chunk);
   }
   req.setTimeout(0);
@@ -1066,7 +1075,7 @@ async function saveAssistantPreference(body) {
 async function startAssistant(body) {
   const message = typeof body.message === 'string' ? body.message.trim().slice(0, 16000) : '';
   const attachment = typeof body.attachment === 'string' ? body.attachment.slice(0, 24000) : '';
-  const mode = ['ask', 'auto', 'full'].includes(body.permissionMode) ? body.permissionMode : 'ask';
+  let mode = ['ask', 'auto', 'full'].includes(body.permissionMode) ? body.permissionMode : 'ask';
   if (!message) throw new Error('A chat message is required');
   const role = body.role === 'writing' ? 'writing' : 'experiment';
   const agenticMode = body.agenticMode === true;
@@ -1080,10 +1089,12 @@ async function startAssistant(body) {
   if (agenticMode && mode !== 'full') throw new Error('Agentic mode requires Full access so the router and workers can edit and test the project.');
   const agentic = agenticMode ? await discoverAgenticMode(runtime, projectState.root || repoRoot, true) : null;
   if (agenticMode && !agentic.available) throw new Error(agentic.error || 'Pi and Herdr must be ready before Agentic mode can start.');
-  const requestedProject = mode === 'ask' ? null : await openProjectFromPrompt(message);
+  const requestedProject = mode === 'ask' || body.annotations?.length ? null : await openProjectFromPrompt(message);
   if (!projectState.root) throw new Error('Create or open a project before starting this conversation.');
   const releaseAdmission = await acquireProjectGate('write', JSON.stringify(['assistant-admission', projectState.root]));
   try {
+  const feedback = await prepareAnnotations(projectState.root, body.annotations, role, body.annotationSnapshots);
+  if (feedback.review) { if (!runtime.modes.includes('ask')) throw Error('This connection cannot perform a read-only manuscript review.'); mode='ask'; }
   const history = await listAssistantRecords();
   const conversation = await selectConversation(projectState.root, {...body, message, ...(requestedProject ? {conversationId: null, newSession: true} : {})}, role, history);
   if ([...assistantJobs.values()].some(job => job.projectRoot === projectState.root && job.conversationId === conversation.id && (job.status === 'running' || job.controller))) throw Object.assign(new Error('This conversation already has a task in progress. Queue a follow-up or start another conversation.'), {status: 409});
@@ -1100,14 +1111,14 @@ async function startAssistant(body) {
   const writingFormat = body.writeupFormat === 'latex' ? 'latex' : 'markdown';
   const initialWriteupFormat = body.defaultWriteupFormat === 'latex' ? 'latex' : 'markdown';
   const writingContext = role === 'writing' ? `\nSelected editor format for this request: ${writingFormat}. For a requested write-up, write the complete raw ${writingFormat === 'markdown' ? 'Markdown source to writeups/main.md' : 'LaTeX source to writeups/main.tex'} so it populates the source editor. Do not substitute a compiled PDF or a chat-only summary for the editable source. If the user explicitly requests the other language, explain the mismatch and use their explicit request. Preserve existing work and use recorded project evidence. Source links may use /writeups/main.${writingFormat === 'markdown' ? 'md' : 'tex'}.` : `\nDefault format for initial experiment write-ups: ${initialWriteupFormat}. After completing an authorized experiment, create an initial evidence-grounded write-up as ${initialWriteupFormat === 'latex' ? 'LaTeX source at writeups/main.tex' : 'Markdown source at writeups/main.md'} if no manuscript draft exists. Include the research question, methods, recorded results, limitations, and links to generated figures. Save editable source so it populates the Write-up editor; a chat-only summary or compiled PDF is insufficient. This preference is independent of the currently viewed editor format. Do not convert, replace, or overwrite an existing manuscript merely to match this default. An explicit format request in the current user prompt takes precedence. Respect the selected access mode; questions and read-only requests do not authorize creating a write-up. Forward the chosen format in any relevant worker brief.`;
-  const presentationContext = researchInstructions() + '\n' + projectRetrievalContext + (body.artifactPath ? attachedFigureContext(evidence, body.artifactPath) : '') + writingContext + profileInstructions(selection.profileId);
+  const presentationContext = feedback.context + await selectedLibraryContext(projectState.root,body.librarySourceId,body.librarySourceId?.startsWith('outline:')?await projectSummary():undefined) + libraryInstructions + researchInstructions() + '\n' + projectRetrievalContext + (body.artifactPath ? attachedFigureContext(evidence, body.artifactPath) : '') + writingContext + profileInstructions(selection.profileId);
   const startedAt = new Date().toISOString();
   const initialStage = requestedProject ? `Working in ${requestedProject.name}` : 'Working in the active project';
   const prior = conversationRecords.at(-1);
-  const continuing = prior?.selection?.adapterId === selection.adapterId && Boolean(prior.agenticMode) === agenticMode && canResumeProfile(prior.selection, selection) && prior.sessionId;
+  const continuing = !feedback.review && !prior?.review && prior?.selection?.adapterId === selection.adapterId && Boolean(prior.agenticMode) === agenticMode && canResumeProfile(prior.selection, selection) && prior.sessionId;
   const sessionId = continuing || null;
   const handoff = !continuing || prior?.status !== 'complete' ? conversationContext(conversationRecords) : '';
-  const record = {id, kind: 'assistant', role, writeupFormat: role === 'writing' ? writingFormat : initialWriteupFormat, agenticMode, conversationId: conversation.id, conversationTitle: conversation.title, selection, sessionId, effective: null, handoff: Boolean(handoff), mode, message, artifactPath: body.artifactPath || null, status: 'running', stage: initialStage, projectRoot: projectState.root, projectCreated: Boolean(requestedProject), startedAt, completedAt: null, output: '', events: [{id: randomUUID(), at: startedAt, kind: 'start', label: initialStage, status: 'running'}], ...(agenticMode ? {agenticActivity: {checkedAt: null, available: true, workspaceId: null, workspaceSeen: false, workers: []}} : {}), usage: null, error: null};
+  const record = {id, kind: 'assistant', role, annotations: feedback.notes, review: feedback.review, writeupFormat: role === 'writing' ? writingFormat : initialWriteupFormat, agenticMode, conversationId: conversation.id, conversationTitle: conversation.title, selection, sessionId, effective: null, handoff: Boolean(handoff), mode, message, artifactPath: body.artifactPath || null, status: 'running', stage: initialStage, projectRoot: projectState.root, projectCreated: Boolean(requestedProject), startedAt, completedAt: null, output: '', events: [{id: randomUUID(), at: startedAt, kind: 'start', label: initialStage, status: 'running'}], ...(agenticMode ? {agenticActivity: {checkedAt: null, available: true, workspaceId: null, workspaceSeen: false, workers: []}} : {}), usage: null, error: null};
   assistantJobs.set(id, record);
   const jobDirectory = relativePath(`assistant/${id}`);
   await mkdir(jobDirectory, {recursive: true});
@@ -1161,6 +1172,7 @@ async function startAssistant(body) {
       await finishAgenticActivity?.().catch(() => {});
       if (record.status === 'running') { record.status = record.controller?.signal.aborted ? 'canceled' : 'failed'; record.error = record.status === 'canceled' ? null : error.message; }
     } finally {
+      if(record.status==='complete'&&!record.review) void importAssistantReferences(record.projectRoot,record.output).catch(()=>{});
       record.completedAt = new Date().toISOString(); delete record.controller;
       await appendAssistantEvent(record, {kind: record.status, label: record.status === 'complete' ? 'Task complete' : record.status === 'canceled' ? 'Task canceled' : 'Task failed', status: record.status});
     }
@@ -1190,7 +1202,7 @@ async function serveUi(req, res, url) {
   try {
     if (!(await stat(destination)).isFile()) destination = path.join(uiRoot, 'index.html');
     const data = await readFile(destination);
-    const types = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf'};
+    const types = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf'};
     res.writeHead(200, {'content-type': types[path.extname(destination).toLowerCase()] || 'application/octet-stream', 'cache-control': path.basename(destination) === 'index.html' ? 'no-store' : 'public, max-age=31536000, immutable'});
     return res.end(req.method === 'HEAD' ? undefined : data);
   } catch {
@@ -1224,11 +1236,34 @@ async function handleProjectRequest(req, res) {
     const streamingDataset = req.method === 'POST' && url.pathname === '/api/datasets/upload' && req.headers['content-type']?.startsWith('multipart/form-data;');
     if (!streamingDataset && !['GET', 'HEAD'].includes(req.method) && (Number(req.headers['content-length']) > 0 || req.headers['transfer-encoding']) && req.headers['content-type']?.split(';')[0].trim().toLowerCase() !== 'application/json') throw Object.assign(new Error('Use application/json for request bodies'), {status: 415});
     if (req.method === 'GET' && url.pathname === '/api/health') return json(res, 200, {ok: true, service: 'ml-theory-workbench-local-backend', version: '1', projectRoot: projectState.root, safety: {allowlistedCommands: Object.keys(commandManifest), network: 'disabled-for-workflows', writes: 'project-root-only'}});
-    const independent = url.pathname.startsWith('/api/assistant') || url.pathname === '/api/project/open';
+    if (url.pathname === '/api/projects' && req.method === 'GET') return json(res, 200, await projectCatalog.snapshot({details: url.searchParams.get("graph") === "1"}));
+    if (url.pathname === '/api/projects' && req.method === 'POST') { await projectCatalog.edit(await parseBody(req)); return json(res, 200, {ok:true}); }
+    const independent = url.pathname.startsWith('/api/assistant') || url.pathname === '/api/project/open' || url.pathname.startsWith('/api/projects') || url.pathname.startsWith('/api/library');
     const projectScoped = url.pathname.startsWith('/api/') && url.pathname !== '/api/commands' && !independent;
     if (projectScoped) {
       const mode = ['GET', 'HEAD'].includes(req.method) ? 'read' : 'write';
       releaseProjectGate = await acquireProjectGate(mode);
+    }
+    if (url.pathname === '/api/library' && req.method === 'GET') { scheduleLibrarySync(projectState.root); return json(res, 200, await libraryState(projectState.root)); }
+    if (url.pathname === '/api/library/import' && req.method === 'POST') return json(res, 201, await importLibrary(projectState.root, await parseBody(req, 180 * 1024 * 1024)));
+    if (url.pathname === '/api/library' && req.method === 'PUT') return json(res, 200, await updateLibrary(projectState.root, await parseBody(req)));
+    if (url.pathname === '/api/library/sync' && req.method === 'POST') return json(res, 200, await syncLibrary(projectState.root));
+    if (url.pathname === '/api/library/graph' && req.method === 'GET') return json(res, 200, await libraryGraph(projectState.root, await projectSummary()));
+    if (url.pathname === '/api/library/pdf' && req.method === 'GET') { const bytes = await libraryPdf(projectState.root,url.searchParams.get('id')); res.writeHead(200, {'content-type':'application/pdf','cache-control':'no-cache'}); return res.end(bytes); }
+    if (url.pathname === '/api/library/image' && req.method === 'GET') { const image = await libraryImage(projectState.root,url.searchParams.get('id'),url.searchParams.get('url')); res.writeHead(200, {'content-type':image.type}); return res.end(image.bytes); }
+    if (url.pathname === '/api/annotations/document' && req.method === 'POST') {const body=await parseBody(req);return json(res,200,await annotationDocument(projectState.root,body.target));}
+    if (url.pathname === '/api/annotations' && req.method === 'GET') return json(res, 200, {notes:await listAnnotations(projectState.root)});
+    if (url.pathname === '/api/annotations' && req.method === 'POST') return json(res, 201, await saveAnnotation(projectState.root, await parseBody(req)));
+    if (url.pathname === '/api/annotations/validate' && req.method === 'POST') { const body=await parseBody(req); const result=await prepareAnnotations(projectState.root,body.ids,body.role); return json(res,200,{notes:result.notes}); }
+    if (url.pathname === '/api/annotations/apply' && req.method === 'POST') {
+      const body=await parseBody(req), record=(await listAssistantRecords()).find(r=>r.id===body.id);
+      if(!record?.review || record.status!=='complete') throw Error('No completed revision proposal.');
+      const doc=await annotationDocument(projectState.root,{kind:'writeup',format:record.review.format});
+      if(revisionHash(doc.source,doc.revision)!==record.review.sourceHash) throw Object.assign(Error('The manuscript or bibliography changed. Request a new review.'),{status:409});
+      const source=reviewDraft(record.output,record.review.format);
+      await mkdir(relativePath('writeups/backups'),{recursive:true});
+      await atomicWriteFile(relativePath(`writeups/backups/before-review-${Date.now()}.${record.review.format==='latex'?'tex':'md'}`),doc.source);
+      return json(res,200,await saveWriteupSource({format:record.review.format,source,expectedSource:doc.source}));
     }
     if (req.method === 'GET' && url.pathname === '/api/assistant/capabilities') {
       const refresh = url.searchParams.get('refresh') === '1';
@@ -1336,7 +1371,7 @@ async function handleProjectRequest(req, res) {
 await loadStoredProject();
 await ensureProject({initializeGit: process.env.WORKBENCH_INITIALIZE_GIT === '1'});
 if (configuredProjectRoot) await persistAppState();
-if (projectState.root) openedProjects.add(projectState.root);
+if (projectState.root) { projectState.root = await realpath(projectState.root); openedProjects.add(projectState.root); await projectCatalog.remember(projectState.root).catch(error => console.warn("Project index:", error.message)); }
 // Large local transfers may take more than five minutes; bound idle uploads instead.
 const server = http.createServer({requestTimeout: 0}, handle);
 server.on('error', error => { console.error(error.code === 'EADDRINUSE' ? `Port ${port} is already in use. Stop the other service or set WORKBENCH_PORT.` : `Cannot start Axiovela: ${error.message}`); process.exitCode = 1; });

@@ -41,6 +41,8 @@ try {
   assert.equal((await (await fetch(base + '/api/health')).json()).projectRoot, root);
   assert.equal(await rawRequest({host: `attacker.invalid:${port}`}), 403, 'reject DNS rebinding hosts');
   assert.equal((await fetch(base + '/api/project', {headers: {origin: 'https://attacker.invalid'}})).status, 403, 'reject foreign read origins');
+  assert.equal((await fetch(base + '/api/projects', {headers: {origin: 'https://attacker.invalid'}})).status, 403, 'project catalog rejects foreign origins');
+  assert.equal((await request('/api/projects', {action:'remember',path:root}, {'content-type':'text/plain'})).status, 415, 'project index rejects simple cross-origin writes');
   assert.equal((await fetch(base + '/api/health', {headers: {origin: base}})).status, 200);
   assert.equal((await fetch(base + '/api/health', {headers: {origin: 'null'}})).status, 403);
   assert.equal((await request('/api/project/open', {path: root}, {'content-type': 'text/plain'})).status, 415, 'reject browser simple-request content types');

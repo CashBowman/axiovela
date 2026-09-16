@@ -1,6 +1,6 @@
 {
   "name": "ml-theory-workbench",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -54,21 +54,29 @@
     "beta:prepare": "node scripts/beta-prepare.mjs",
     "desktop:make:portable": "npm run build && npm run desktop:tools && node scripts/desktop-notices.mjs && electron-forge make --targets @electron-forge/maker-zip && node scripts/desktop-artifacts.mjs",
     "beta:feedback:smoke": "node scripts/beta-feedback-smoke.mjs",
-    "parallel:smoke": "node scripts/concurrency-responsiveness-smoke.mjs && node scripts/parallel-smoke.mjs && node scripts/pi-activity-smoke.mjs && node scripts/agentic-queue-smoke.mjs"
+    "parallel:smoke": "node scripts/concurrency-responsiveness-smoke.mjs && node scripts/parallel-smoke.mjs && node scripts/pi-activity-smoke.mjs && node scripts/agentic-queue-smoke.mjs",
+    "annotations:test": "node --test scripts/library-annotations.test.mjs",
+    "annotations:smoke": "node scripts/library-annotations-smoke.mjs",
+    "projects:test": "node --test scripts/project-catalog.test.mjs",
+    "projects:smoke": "node scripts/project-navigator-smoke.mjs"
   },
   "dependencies": {
     "@citation-js/core": "^0.7.21",
     "@citation-js/plugin-bibtex": "^0.7.21",
+    "@mozilla/readability": "0.6.0",
+    "busboy": "^1.6.0",
+    "d3-force": "3.0.0",
     "katex": "^0.18.5",
-    "sharp": "^0.35.4",
-    "yaml": "^2.9.0",
+    "linkedom": "0.18.13",
+    "pdfjs-dist": "6.3.289",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
-    "busboy": "^1.6.0"
+    "sharp": "^0.35.4",
+    "yaml": "^2.9.0"
   },
   "repository": {
     "type": "git",
@@ -89,10 +97,10 @@
     "@fontsource/manrope": "^5.3.0",
     "@vitejs/plugin-react": "^6.1.1",
     "electron": "44.2.0",
+    "extract-zip": "npm:@electron-internal/extract-zip@1.0.5",
     "lucide-react": "^0.468.0",
     "playwright-core": "1.63.0",
-    "vite": "^8.2.2",
-    "extract-zip": "npm:@electron-internal/extract-zip@1.0.5"
+    "vite": "^8.2.2"
   },
   "productName": "Axiovela",
   "main": "desktop/main.cjs",

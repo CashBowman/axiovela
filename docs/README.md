@@ -23,3 +23,5 @@
 - [Scientific integrity](scientific-integrity.md), [visualization guidance](visualization-guidelines.md), and [branding compatibility](branding.md).
 
 - [Parallel research and writing](parallel-chats.md).
+
+- [Library and passage feedback](annotations.md)
