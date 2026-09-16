@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.8
+
+- Navigate filtered Library sources and science/engineering results with Up/Down and Home/End in displayed group order. Selection, focus and reader stay together, with clamped boundaries and a single list Tab entry.
+- Preserve reader position when filtering hides the selection, independent read-checkbox keyboard controls, and normal search/chat/PDF keys.
+- See [release notes](docs/releases/0.2.8.md).
+
 ## 0.2.7
 
 - Stabilize annotation popovers from their first visible frame and reopen notes beside their pins.

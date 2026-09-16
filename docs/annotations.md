@@ -147,3 +147,9 @@ Run `npm run interaction:smoke` for rendering invalidation/callback contracts, a
 benchmark. `AXIOVELA_PERF_BINARY` selects a packaged executable; `PERF_EVIDENCE`
 sets the CPU profile, JSON and screenshot directory. Timings describe entire typing
 sequences, not field INP. See the 0.2.7 release notes for recorded measurements.
+
+## Library keyboard navigation
+
+Click or Tab into an item, then use Up/Down to move through visible sources and science/engineering results in displayed group order. Home/End select the first/last item without wrapping. Search and type/reading-status filters define the reachable items. Filtering away the selection leaves the reader open and gives the first visible item the list's Tab entry. Read checkboxes remain separate Tab stops; Space toggles them.
+
+Run `npm run library:navigation:smoke` for isolated browser coverage and `npm run annotations:smoke` for packaged Library/reader/clipboard checks.

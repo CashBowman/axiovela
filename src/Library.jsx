@@ -142,7 +142,8 @@ export function LibrarySources({ library: l }) {
   const [query, setQuery] = useState(""),
     [filter, setFilter] = useState("all"),
     [readFilter, setReadFilter] = useState("all"),
-    upload = useRef();
+    upload = useRef(),
+    itemButtons = useRef(new Map());
   const papers = l.state.papers.filter(
     (p) =>
       (filter === "all" ||
@@ -168,6 +169,46 @@ export function LibrarySources({ library: l }) {
           .toLowerCase()
           .includes(query.toLowerCase())),
   );
+  // Rendering and keyboard navigation share the same filtered group order.
+  const researchGroups = ["experiment", ...Object.keys(researchKinds)]
+    .map((kind) => ({ kind, items: research.filter((n) => n.kind === kind) }))
+    .filter((group) => group.items.length);
+  const visibleItems = [
+    ...papers.map((p) => p.id),
+    ...researchGroups.flatMap((group) => group.items.map((n) => "outline:" + n.key)),
+  ];
+  const keyboardEntry = visibleItems.includes(l.selected) ? l.selected : visibleItems[0];
+  const selectItem = (id) => {
+    l.setSelected(id);
+    l.setView("read");
+  };
+  const itemNavigation = (id) => ({
+    ref: (button) => {
+      if (button) itemButtons.current.set(id, button);
+      else itemButtons.current.delete(id);
+    },
+    tabIndex: id === keyboardEntry ? 0 : -1,
+    onClick: () => selectItem(id),
+    onKeyDown: (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+      const index = visibleItems.indexOf(id);
+      if (index < 0) return;
+      let next;
+      switch (event.key) {
+        case "ArrowDown": next = Math.min(index + 1, visibleItems.length - 1); break;
+        case "ArrowUp": next = Math.max(index - 1, 0); break;
+        case "Home": next = 0; break;
+        case "End": next = visibleItems.length - 1; break;
+        default: return;
+      }
+      event.preventDefault();
+      const destination = visibleItems[next];
+      selectItem(destination);
+      const button = itemButtons.current.get(destination);
+      button?.focus({ preventScroll: true });
+      button?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    },
+  });
   const submit = async (e) => {
     e?.preventDefault();
     if (external(query)) {
@@ -276,6 +317,7 @@ export function LibrarySources({ library: l }) {
         </p>
       )}
       <div className="libraryList">
+        {visibleItems.length > 0 && <p className="libraryNavigationHint">↑ ↓ to navigate sources and results</p>}
         {papers.length>0 && <section className="libraryGroup" aria-label="Sources"><h3>Sources <span>{papers.length}</span></h3>{papers.map((p) => (
           <article
             key={p.id}
@@ -284,10 +326,7 @@ export function LibrarySources({ library: l }) {
             <button
               className="sourceTitle"
               aria-pressed={p.id === l.selected}
-              onClick={() => {
-                l.setSelected(p.id);
-                l.setView("read");
-              }}
+              {...itemNavigation(p.id)}
             >
               {p.title}
             </button>
@@ -309,7 +348,7 @@ export function LibrarySources({ library: l }) {
             </div>
           </article>
         ))}</section>}
-        {["experiment",...Object.keys(researchKinds)].filter(kind=>research.some(n=>n.kind===kind)).map(kind=><section className="libraryGroup" aria-label={researchKinds[kind]?.plural || "Experiments"} key={kind}><h3>{researchKinds[kind]?.plural || "Experiments"} <span>{research.filter(n=>n.kind===kind).length}</span></h3>{research.filter(n=>n.kind===kind).map((n) => (
+        {researchGroups.map(({kind, items})=><section className="libraryGroup" aria-label={researchKinds[kind]?.plural || "Experiments"} key={kind}><h3>{researchKinds[kind]?.plural || "Experiments"} <span>{items.length}</span></h3>{items.map((n) => (
           <article
             key={n.key}
             className={
@@ -320,10 +359,7 @@ export function LibrarySources({ library: l }) {
             <button
               className="sourceTitle"
               aria-pressed={l.selected === "outline:" + n.key}
-              onClick={() => {
-                l.setSelected("outline:" + n.key);
-                l.setView("read");
-              }}
+              {...itemNavigation("outline:" + n.key)}
             >
               {n.title}
             </button>

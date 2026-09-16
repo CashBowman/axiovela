@@ -292,6 +292,11 @@
   min-height: 0;
   flex: 1;
 }
+.libraryNavigationHint {
+  margin: 8px 14px;
+  color: var(--muted);
+  font-size: 10px;
+}
 .libraryCard {
   padding: 14px;
   border-top: 1px solid var(--line);

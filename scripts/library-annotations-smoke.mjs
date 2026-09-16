@@ -299,6 +299,19 @@ try {
   assert.equal(await readBox.evaluate(el=>getComputedStyle(el).appearance),'none');
   await readingFilter.selectOption('all');
   assert.ok(await page.locator('.libraryGroup h3').count()>0);
+  // Exercise the shipped Library key handler before continuing reader/graph checks.
+  const navigationButtons=page.locator('.libraryList .sourceTitle');
+  await navigationButtons.first().focus();
+  await page.keyboard.press('End');
+  assert.equal(await navigationButtons.last().getAttribute('aria-pressed'),'true');
+  assert.equal(await navigationButtons.last().evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('Home');
+  assert.equal(await navigationButtons.first().getAttribute('aria-pressed'),'true');
+  assert.equal(await navigationButtons.first().evaluate(el=>el===document.activeElement),true);
+  await page.keyboard.press('ArrowUp');
+  assert.equal(await navigationButtons.first().getAttribute('aria-pressed'),'true');
+  await page.getByRole('button',{name:imported.paper.title,exact:true}).click();
+
   await page.getByRole("button", { name: "Connections", exact: true }).click();
   await page.getByRole("group", { name: "Source connections graph" }).waitFor();
   await page.screenshot({
