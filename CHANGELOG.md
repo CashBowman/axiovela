@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.9
+
+- Add project-filtered conversation history with search, rename, pins and reversible archiving; back up old metadata and preserve experiments/transcripts.
+- Add scoped arrow and Home/End navigation to Trials, figure cards, history results and workspace sections.
+- See [release notes](docs/releases/0.2.9.md).
+
 ## 0.2.8
 
 - Navigate filtered Library sources and science/engineering results with Up/Down and Home/End in displayed group order. Selection, focus and reader stay together, with clamped boundaries and a single list Tab entry.

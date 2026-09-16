@@ -20,10 +20,16 @@ try {
   await assert.rejects(validateSelection({...selection, effort: 'ultra'}, cwd), /not supported/);
   await assert.rejects(validateSelection({...selection, modelId: 'missing'}, cwd), /no longer/);
   await assert.rejects(validateSelection({...selection, adapterId: 'not-a-provider'}, cwd), /supported/);
-  const first = JSON.parse(await run());
+  const first = JSON.parse(await run({conversationTitle: 'Information dimension in ML'}));
+  assert.equal(first.name, 'Information dimension in ML');
   assert.equal(first.effort, 'high'); assert.equal(first.turnEffort, 'high'); assert.equal(first.sandbox, 'read-only'); assert.equal(first.approvalPolicy, 'never'); assert.equal(first.approvalsReviewer, 'user');
   const second = JSON.parse(await run({selection: {...selection, modelId: 'second-model', effort: ''}, mode: 'auto'}));
   assert.equal(second.id, first.id); assert.equal(second.turns, 2); assert.equal(second.model, 'second-model'); assert.equal(second.effort, 'low'); assert.equal(second.sandbox, 'workspace-write'); assert.equal(second.approvalPolicy, 'on-request'); assert.equal(second.approvalsReviewer, 'auto_review');
+  assert.equal(second.name, 'Information dimension in ML', 'resuming preserves the provider title');
+  const renamed = JSON.parse(await run({conversationTitle: 'Manual conversation name'}));
+  assert.equal(renamed.name, 'Manual conversation name');
+  const unsupportedTitle = JSON.parse(await run({conversationTitle: 'FIXTURE_UNSUPPORTED_TITLE'}));
+  assert.equal(unsupportedTitle.name, 'Manual conversation name', 'unsupported title updates do not break turns');
   const elevated = JSON.parse(await run({mode: 'full'}));
   assert.equal(elevated.id, first.id); assert.equal(elevated.sandbox, 'danger-full-access'); assert.equal(elevated.approvalPolicy, 'never');
   const restricted = JSON.parse(await run({mode: 'ask'}));

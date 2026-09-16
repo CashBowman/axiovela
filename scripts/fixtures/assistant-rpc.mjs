@@ -21,6 +21,11 @@ for await (const line of readline.createInterface({input: process.stdin})) {
       Object.assign(session, {model: p.model, effort: p.config?.model_reasoning_effort, sandbox: p.sandbox, approvalPolicy: p.approvalPolicy, approvalsReviewer: p.approvalsReviewer});
       result = {thread: {id: session.id}, model: session.model, reasoningEffort: session.effort, modelProvider: 'openai'};
     }
+    if (method === 'thread/name/set') {
+      if (p.name === 'FIXTURE_UNSUPPORTED_TITLE') throw new Error('Method not found');
+      if (!session || p.threadId !== session.id || typeof p.name !== 'string') throw new Error('Invalid title request');
+      session.name = p.name;
+    }
     if (method === 'thread/unarchive') {
       session = JSON.parse(await readFile(store(p.threadId), 'utf8'));
       session.archived = false; session.archiveOnStart = false;

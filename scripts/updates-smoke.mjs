@@ -33,6 +33,7 @@ try {
   console.log('Update UI: fixture task active');
   await composer.fill('Keep this unsent message');
   await page.getByRole('button', {name: 'Write-up', exact: true}).click();
+  await page.getByRole('button', {name: 'Markdown', exact: true}).click();
   const editor = page.getByRole('textbox', {name: 'Write-up source'});
   await editor.fill('# Unsaved update test\nKeep this manuscript');
   // Inject a signed, offline provider through the test debugger, never a
@@ -96,8 +97,10 @@ try {
   await page.getByRole('button', {name: 'Stop task'}).click();
   await page.getByRole('button', {name: 'Stop task'}).waitFor({state: 'hidden'});
   await page.getByRole('button', {name: 'Write-up', exact: true}).click();
+  assert.equal(await editor.inputValue(), '# Unsaved update test\nKeep this manuscript', 'canceling the fixture task preserves the draft');
   await page.getByRole('button', {name: 'Save source', exact: true}).click();
   await page.waitForFunction(() => document.body.innerText.includes('All changes saved.'));
+  await page.waitForFunction(async () => (await fetch('/api/writeups/source?format=markdown').then(r => r.json())).source === '# Unsaved update test\nKeep this manuscript');
   const tabs = await page.evaluate(() => localStorage.getItem('axiovela-project-tabs'));
   await application.close(); application = null;
   application = await electron.launch({executablePath, args: packaged ? [] : [root], env, chromiumSandbox: true});

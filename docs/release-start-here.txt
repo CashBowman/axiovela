@@ -1,9 +1,9 @@
-AXIOVELA 0.2.8 — START HERE
+AXIOVELA 0.2.9 — START HERE
 
-Download: https://github.com/CashBowman/axiovela/releases/tag/v0.2.8
+Download: https://github.com/CashBowman/axiovela/releases/tag/v0.2.9
 
 Choose your operating system and processor:
-- Mac M-series: darwin-arm64.dmg. Intel Mac: darwin-x64.dmg.
+- Mac: 0.2.9 candidates are withheld pending native distribution validation. No Mac installer is included in this release.
 - Windows Intel/AMD 64-bit: win32-x64-Setup.exe.
 - Windows ARM64: win32-arm64.zip (portable; extract completely, then run axiovela.exe).
 - Linux: linux-x64 or linux-arm64, matching your CPU. DEB/RPM installers and portable ZIPs are available.
@@ -13,7 +13,7 @@ On Windows x64, run Setup.exe. On Linux, use the matching DEB/RPM package manage
 Mac packages use ad-hoc signing and are not Apple-notarized. Windows packages are unsigned. Follow your OS approval process and device policy; do not disable security protections. Mac guidance: https://github.com/CashBowman/axiovela/blob/main/docs/mac-installation.md
 Windows ARM64 includes native ARM64 Electron; its bundled x64 Tectonic runs through Windows emulation.
 
-Save work, finish active tasks, and quit Axiovela before updating. Keep your research folders and existing profile. From 0.2.4, use the in-app update panel to download and verify this release. Older builds need one manual upgrade to 0.2.8. Installation remains manual.
+Save work, finish active tasks, and quit Axiovela before updating. Keep your research folders and existing profile. From 0.2.4, use the in-app update panel to download and verify this release. Older builds need one manual upgrade to 0.2.9. Installation remains manual.
 
 Try Help > Try the example study. Connect your own AI provider below a chat composer. Run experiments and writing chats together, switch project tabs freely, or start another conversation. Queue follow-ups to continue in the background. Queued messages stay visible and editable, pause after errors or Stop, and restore paused after reopening. Stop task affects only the selected chat. Chats in one project share files; give assistants distinct outputs.
 

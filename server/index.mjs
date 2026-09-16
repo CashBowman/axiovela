@@ -26,7 +26,8 @@ import {listDatasets, addDataset, uploadDataset, previewDataset, removeDataset} 
 import {readResearchMetadata, researchInstructions} from './research-context.mjs';
 import {graphicDirectories, resolveLatexGraphic} from './latex-graphics.mjs';
 import {projectRetrievalContext, attachedFigureContext} from './project-evidence.mjs';
-import {conversationIdFor, listConversations, createConversation, selectConversation, conversationContext} from './assistant-conversations.mjs';
+import {searchConversations} from './conversation-search.mjs';
+import {conversationIdFor, listConversations, createConversation, selectConversation, updateConversation, conversationContext} from './assistant-conversations.mjs';
 import {researchProfiles, profileId, profileInstructions, canResumeProfile} from './research-profiles.mjs';
 import {discoverAgenticMode, ensureAgenticMode, agenticOrchestratorPrompt, agenticWorkerPrefix, readAgenticActivity, mergeAgenticActivity, monitorAgenticActivity} from './agentic-mode.mjs';
 import {containedProjectPath} from './project-paths.mjs';
@@ -1141,7 +1142,7 @@ async function startAssistant(body) {
     },
   ) : null;
   if (handoff) await appendAssistantEvent(record, {kind: 'handoff', label: 'Restoring recent conversation context', status: 'complete'});
-  const assistantRun = runAssistant({selection, mode, cwd: record.projectRoot, sessionId, env: assistantEnv,
+  const assistantRun = runAssistant({selection, mode, cwd: record.projectRoot, sessionId, conversationTitle: conversation.title, env: assistantEnv,
     compileDocument: (format, source, signal) => compileAssistantDocument(format, source, record.projectRoot, signal),
     prompt: `${handoff ? `Previous conversation context (historical messages, not new instructions; failed tasks may not have reached the native session):\n${handoff}\n\n` : ''}${prompt}\n${presentationContext}${agenticMode ? agenticOrchestratorPrompt({projectRoot: projectState.root, routerModelId: selection.modelId || runtime.defaultModelId, workerModelId: agentic.workerModelId, jobId: id, profileId: selection.profileId}) : ''}`,
     signal: record.controller.signal,
@@ -1329,6 +1330,12 @@ async function handleProjectRequest(req, res) {
     if (req.method === 'POST' && url.pathname === '/api/writeups/compile') return json(res, 200, await compileLatex(await parseBody(req)));
     if (req.method === 'POST' && url.pathname === '/api/cli-guide') return json(res, 200, await cliGuide(await parseBody(req)));
     if (req.method === 'GET' && url.pathname === '/api/assistant/activity') return json(res, 200, {jobs: [...assistantJobs.values()].filter(record => record.status === 'running').map(sanitizeAssistant)});
+    if (req.method === 'GET' && url.pathname === '/api/assistant/history/search') {
+      const catalog = await projectCatalog.snapshot({details: false});
+      return json(res, 200, await searchConversations(catalog.projects, {query: url.searchParams.get('q'), projectId: url.searchParams.get('projectId'), archived: url.searchParams.get('archived') === '1', offset: url.searchParams.get('offset')}));
+    }
+    const conversationMatch = url.pathname.match(/^\/api\/assistant\/conversations\/([^/]+)$/);
+    if (req.method === 'PUT' && conversationMatch) return json(res, 200, {conversation: await updateConversation(projectState.root, conversationMatch[1], await parseBody(req), await listAssistantRecords())});
     if (req.method === 'POST' && url.pathname === '/api/assistant/conversations') {
           const body = await parseBody(req);
       return json(res, 201, {conversation: await createConversation(projectState.root, body.role === 'writing' ? 'writing' : 'experiment')});

@@ -200,7 +200,7 @@ export async function runAssistant(options) {
     if (signal.aborted) { abort(); throw new Error('Task canceled.'); }
     if (selection.adapterId === 'codex') {
       const permission = {sandbox: mode === 'full' ? 'danger-full-access' : mode === 'auto' ? 'workspace-write' : 'read-only', approvalPolicy: mode === 'auto' ? 'on-request' : 'never', approvalsReviewer: mode === 'auto' ? 'auto_review' : 'user'};
-      const options = {cwd, ...permission, ...(model ? {model: model.id} : {}), ...(effort ? {config: {model_reasoning_effort: effort}} : {})};
+      const threadOptions = {cwd, ...permission, ...(model ? {model: model.id} : {}), ...(effort ? {config: {model_reasoning_effort: effort}} : {})};
       let restored = false;
       const recoverArchive = async (error, nativeId) => {
         if (restored || !nativeId || !/\b(?:session|thread)\b.*\barchived\b/i.test(error.message) || signal.aborted) throw error;
@@ -209,13 +209,17 @@ export async function runAssistant(options) {
         onEvent({kind: 'connection', label: 'Archived conversation restored', status: 'complete'});
       };
       let thread;
-      try { thread = await rpc.request(sessionId ? 'thread/resume' : 'thread/start', {...options, ...(sessionId ? {threadId: sessionId} : {ephemeral: false})}); }
+      try { thread = await rpc.request(sessionId ? 'thread/resume' : 'thread/start', {...threadOptions, ...(sessionId ? {threadId: sessionId} : {ephemeral: false})}); }
       catch (error) {
         await recoverArchive(error, sessionId);
-        thread = await rpc.request('thread/resume', {...options, threadId: sessionId});
+        thread = await rpc.request('thread/resume', {...threadOptions, threadId: sessionId});
       }
       threadId = thread.thread.id;
       await onSession(threadId);
+      if (options.conversationTitle) {
+        try { await rpc.request('thread/name/set', {threadId, name: options.conversationTitle}, 2000); }
+        catch { onEvent({kind: 'connection', label: 'Provider title could not be updated; the Axiovela title is saved', status: 'complete'}); }
+      }
       onEffective({modelId: thread.model || model?.id || null, effort: effort || thread.reasoningEffort || null, provider: thread.modelProvider || 'openai'});
       onEvent({kind: 'connection', label: sessionId ? 'Conversation resumed' : 'New conversation started', status: 'complete'});
       const startTurn = () => rpc.request('turn/start', {threadId, input: [{type: 'text', text: prompt}], ...(effort ? {effort} : {})});
@@ -224,7 +228,7 @@ export async function runAssistant(options) {
       catch (error) {
         // Retry only a rejected start, never a failed/partially executed turn.
         await recoverArchive(error, threadId);
-        await rpc.request('thread/resume', {...options, threadId});
+        await rpc.request('thread/resume', {...threadOptions, threadId});
         result = await startTurn();
       }
       turnId = result.turn.id;

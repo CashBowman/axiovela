@@ -874,3 +874,6 @@ nav .selected {
   .topbar nav button { padding: 0 9px; }
   .topbar .topActions { flex-wrap: wrap; padding-bottom: 6px; }
 }
+
+/* The arrow-navigation target remains visible alongside the selection state. */
+.trialLedger button:focus-visible,.figureSections [data-figure-item]:focus-visible,.topbar [data-workspace-tab]:focus-visible{outline:2px solid var(--gold,#a48b4b);outline-offset:-3px}

@@ -1,3 +1,4 @@
+import {navigateItems} from './item-navigation.mjs';
 import FigureFeedbackButton from './FigureFeedbackButton.jsx';
 import React, {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
@@ -29,7 +30,7 @@ export function FigureViewer({figures, initialIndex, url, close}) {
   useEffect(() => { setError(''); }, [figureUrl]);
   const fit = Math.min(bounds[0] / natural[0], bounds[1] / natural[1]);
   const keyDown = event => {
-    if (/INPUT|SELECT|TEXTAREA/.test(event.target.tagName)) return;
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target.closest('input,select,textarea,[contenteditable]:not([contenteditable="false"]),.annotationPopover')) return;
     if (event.key === 'ArrowRight') { event.preventDefault(); change(1); }
     if (event.key === 'ArrowLeft') { event.preventDefault(); change(-1); }
     if (event.key === '+' || event.key === '=') setZoom(z => Math.min(4, z + .25));
@@ -47,7 +48,11 @@ export function FigureViewer({figures, initialIndex, url, close}) {
 export default function FigureGallery({artifacts = [], runs = [], apiBase = '', projectRoot = '', insertArtifact}) {
   const [viewer, setViewer] = useState(null);
   const [selection, setSelection] = useState('');
+  const [focusedFigure, setFocusedFigure] = useState('');
   const {options, unlinked, active, sections} = organizeFigures(artifacts, runs, selection);
+  const visiblePaths = sections.flatMap(section => section.entries.map(entry => entry.artifact.path));
+  const keyboardEntry = visiblePaths.includes(focusedFigure) ? focusedFigure : visiblePaths[0];
+  const navigation = artifact => ({'data-figure-item': '', tabIndex: artifact.path === keyboardEntry ? 0 : -1, onFocus: () => setFocusedFigure(artifact.path)});
   const figures = sections.flatMap(section => section.entries.map(entry => entry.artifact)).filter(item => item.type !== 'pdf');
   const url = item => `${apiBase}/api/artifacts/file?path=${encodeURIComponent(item.path)}&workspace=${encodeURIComponent(projectRoot)}&v=${encodeURIComponent(item.modifiedAt || '')}`;
   // Keep the viewer's navigation order while refreshing its file revisions and
@@ -61,9 +66,9 @@ export default function FigureGallery({artifacts = [], runs = [], apiBase = '', 
       {options.map(group => group.runs.length > 1 ? <optgroup key={group.id} label={group.label}><option value={group.id}>All · {group.label}</option>{group.runs.map(run => <option key={run.id} value={run.id}>{run.label}</option>)}</optgroup> : <option key={group.id} value={group.id}>{group.label}</option>)}
       {unlinked && <option value="unlinked">No run linked</option>}
     </select></label><span aria-live="polite">{figures.length} figure{figures.length === 1 ? '' : 's'}</span>
-    </div>{!sections.length && <div className="emptyResearch"><p>No figures yet for {options.find(group => group.id === active)?.label || (active ? 'this trial' : 'these experiments')}. Names are available while work is running; figures appear when saved.</p></div>}<div className="figureSections">{sections.map(section => <section className="figureTopic" key={section.title}>
-      <h3>{section.title}</h3><div className="figureGrid">{section.entries.map(({artifact, runLabel, ids}) => artifact.type === 'pdf' ? <a className="documentCard" key={artifact.path} href={url(artifact)} target="_blank" rel="noreferrer"><FileText/><div><b><RichText inline text={figureTitle(artifact)}/></b><small className="figureRunLabel" title={ids.join(', ')}>{runLabel}</small></div><span>Open PDF</span></a> : <figure key={artifact.path} draggable onDragStart={event => { event.dataTransfer.setData('application/x-workbench-artifact', JSON.stringify(artifact)); event.dataTransfer.setData('text/plain', artifact.path); }}>
-        <div className="figureImageFrame" data-image-feedback="true"><button className="figureImage" onClick={() => setViewer({figures, index: figures.findIndex(item => item.path === artifact.path)})} aria-label={`Enlarge ${figureTitle(artifact)}`}><img loading="lazy" src={url(artifact)} alt={figureTitle(artifact)}/><span><Expand size={14}/> Enlarge</span></button><FigureFeedbackButton figure={artifact} revision={url(artifact)}/></div><figcaption><b><RichText inline text={figureTitle(artifact)}/></b><small className="figureRunLabel" title={ids.join(', ')}>{runLabel}</small>{artifact.caption && <RichText text={artifact.caption}/>}{insertArtifact && <button className="textButton" onClick={() => insertArtifact(artifact)}>Insert into write-up</button>}</figcaption>
+    </div>{!sections.length && <div className="emptyResearch"><p>No figures yet for {options.find(group => group.id === active)?.label || (active ? 'this trial' : 'these experiments')}. Names are available while work is running; figures appear when saved.</p></div>}<div className="figureSections" onKeyDown={event => navigateItems(event, '[data-figure-item]', {axis: 'both'})}>{sections.map(section => <section className="figureTopic" key={section.title}>
+      <h3>{section.title}</h3><div className="figureGrid">{section.entries.map(({artifact, runLabel, ids}) => artifact.type === 'pdf' ? <a {...navigation(artifact)} className="documentCard" key={artifact.path} href={url(artifact)} target="_blank" rel="noreferrer"><FileText/><div><b><RichText inline text={figureTitle(artifact)}/></b><small className="figureRunLabel" title={ids.join(', ')}>{runLabel}</small></div><span>Open PDF</span></a> : <figure key={artifact.path} draggable onDragStart={event => { event.dataTransfer.setData('application/x-workbench-artifact', JSON.stringify(artifact)); event.dataTransfer.setData('text/plain', artifact.path); }}>
+        <div className="figureImageFrame" data-image-feedback="true"><button {...navigation(artifact)} className="figureImage" onClick={() => setViewer({figures, index: figures.findIndex(item => item.path === artifact.path)})} aria-label={`Enlarge ${figureTitle(artifact)}`}><img loading="lazy" src={url(artifact)} alt={figureTitle(artifact)}/><span><Expand size={14}/> Enlarge</span></button><FigureFeedbackButton figure={artifact} revision={url(artifact)}/></div><figcaption><b><RichText inline text={figureTitle(artifact)}/></b><small className="figureRunLabel" title={ids.join(', ')}>{runLabel}</small>{artifact.caption && <RichText text={artifact.caption}/>}{insertArtifact && <button className="textButton" onClick={() => insertArtifact(artifact)}>Insert into write-up</button>}</figcaption>
       </figure>)}</div>
     </section>)}</div>{viewer && <FigureViewer figures={viewerFigures} initialIndex={viewer.index} url={url} close={() => setViewer(null)}/>}</div>;
 }

@@ -1,0 +1,12 @@
+.conversationHistory{width:min(800px,92vw);max-height:85vh;padding:24px;border:1px solid #cbd2dc;border-radius:12px;color:#253447;background:#f9fafc;box-shadow:0 18px 70px #10203044}
+.conversationHistory::backdrop{background:#17263970}
+.conversationHistory header{display:flex;justify-content:space-between;gap:16px;align-items:start}
+.conversationHistory h2{margin:0;font-size:20px}.conversationHistory p{font-size:13px}.conversationHistory h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#526378;margin:14px 0 6px}
+.historyFilters{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0}.historyFilters label{display:flex;flex-direction:column;gap:5px;font-size:12px}.historyFilters label:first-child{flex:1;min-width:190px}
+.conversationHistory input,.conversationHistory select{padding:8px;border:1px solid #b7c2ce;border-radius:5px;max-width:100%;color:inherit;background:white}
+.conversationHistory button{padding:6px 10px;border:1px solid #b7c2ce;border-radius:5px;background:white;color:inherit;cursor:pointer}.conversationHistory button:disabled{opacity:.5;cursor:default}.conversationHistory button:focus-visible{outline:2px solid #337c9b;outline-offset:2px}
+.historyResults{max-height:46vh;overflow:auto}.historyItem{padding:3px 2px 12px;border-bottom:1px solid #dfe5ec}
+.historyOpen{display:flex;flex-direction:column;gap:6px;text-align:left;width:100%;border:0!important;background:transparent!important;overflow-wrap:anywhere}.historyOpen:hover{background:#eaf0f5!important}.historyOpen strong{font-size:14px}.historyOpen small,.historyActions small{font-size:11px;color:#57677a}.historyOpen span{font-size:12px;line-height:1.5;color:#47566a}
+.historyActions,.historyRename{display:flex;gap:8px;align-items:center;margin:6px 10px}.historyActions button{font-size:11px}.historyRename input{min-width:0;flex:1}.conversationHistory footer{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;align-items:center}.conversationHistory footer small{font-size:11px;color:#526378;flex-basis:100%}.historyNotice{color:#835100}
+.conversationHistory .historyOpen{align-items:flex-start;justify-content:flex-start;text-align:left}
+.conversationHistory small{font-family:inherit;text-transform:none;letter-spacing:normal;font-weight:400;text-align:left}
