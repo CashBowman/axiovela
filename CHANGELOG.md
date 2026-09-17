@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.11
+
+- Double-click a compiled LaTeX PDF to focus and select the corresponding raw source line using SyncTeX mappings.
+- Preserve accurate line mappings when Axiovela prepares project figures for compilation.
+- Include the 0.2.10 guarded Codex sidebar cleanup and History/session continuity changes.
+
 ## 0.2.10
 
 - Safely clean up completed Axiovela-managed Codex sessions from native Recents while preserving app History, native transcripts and follow-up continuity.
