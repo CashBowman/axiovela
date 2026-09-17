@@ -34,6 +34,8 @@ import {containedProjectPath} from './project-paths.mjs';
 import {localServerConfig} from './local-server-config.mjs';
 import {stopProcess} from './assistant-process.mjs';
 import {isDesktopSession, authorizedDesktopRequest} from './desktop-session.mjs';
+import {parseSyncTeX} from '../shared/synctex.mjs';
+import {gunzipSync} from 'node:zlib';
 
 const repoRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const configuredProjectRoot = process.env.WORKBENCH_PROJECT_ROOT?.trim();
@@ -862,7 +864,9 @@ function latexUsesPackage(source, packageName) {
 function ensureLatexPackage(source, packageName) {
   if (latexUsesPackage(source, packageName)) return source;
   const documentClass = source.match(/\\documentclass(?:\[[^\]]*\])?\{[^}]+\}/);
-  return documentClass ? source.replace(documentClass[0], `${documentClass[0]}\n\\usepackage{${packageName}}`) : source;
+  // Keep the render-only source line numbers aligned with the user's source so
+  // SyncTeX navigation remains accurate when Axiovela supplies graphicx.
+  return documentClass ? source.replace(documentClass[0], `${documentClass[0]}\\usepackage{${packageName}}`) : source;
 }
 
 function latexCompileError(raw, logPath) {
@@ -928,7 +932,17 @@ async function compileLatex(body, root = projectState.root, signal, base = 'main
       await copyFile(path.join(outputDirectory, `${base}.render.pdf`), path.join(outputDirectory, `${base}.pdf`));
       if (existsSync(path.join(outputDirectory, `${base}.render.log`))) await copyFile(path.join(outputDirectory, `${base}.render.log`), path.join(outputDirectory, `${base}.log`));
     }
-    return {kind: 'latex-document', status: 'complete', engine: executable, source: `writeups/${base}.tex`, pdf: `exports/${base}.pdf`, log: `exports/${base}.log`, url: `/api/artifacts/file?path=${encodeURIComponent(`exports/${base}.pdf`)}&workspace=${encodeURIComponent(root)}`, logs};
+    let sourceMap = [];
+    try {
+      const compiledBase = path.basename(renderSourcePath, '.tex');
+      sourceMap = parseSyncTeX(
+        gunzipSync(await readFile(path.join(outputDirectory, `${compiledBase}.synctex.gz`))).toString(),
+        path.basename(renderSourcePath),
+      );
+    } catch {
+      // A valid PDF remains usable when the compiler does not emit a source map.
+    }
+    return {kind: 'latex-document', status: 'complete', engine: executable, source: `writeups/${base}.tex`, pdf: `exports/${base}.pdf`, log: `exports/${base}.log`, url: `/api/artifacts/file?path=${encodeURIComponent(`exports/${base}.pdf`)}&workspace=${encodeURIComponent(root)}`, logs, sourceMap};
   } catch (error) {
     if (['ENOENT', 'EACCES'].includes(error.code)) {
       error.message = 'Tectonic could not be started. In the desktop app, use Tools → Select Tectonic executable, or reinstall the latest desktop build. Source users can run npm run setup:latex or set WORKBENCH_LATEX_PATH.';

@@ -16,6 +16,7 @@ const base = `http://127.0.0.1:${port}`;
 await writeFile(fakeTectonic, `#!/usr/bin/env node
 import {basename, join} from 'node:path';
 import {readFile, writeFile} from 'node:fs/promises';
+import {gzipSync} from 'node:zlib';
 const args = process.argv.slice(2);
 const outdir = args[args.indexOf('--outdir') + 1];
 const source = args.at(-1);
@@ -23,6 +24,7 @@ const content = await readFile(source, 'utf8');
 if ((content.match(/\\\\includegraphics/g) || []).length !== 2 || /\\\\includesvg/i.test(content) || /\\\\includegraphics(?:\\[[^\\]]*\\])?\\{[^}]+\\.svg\\}/i.test(content) || !content.includes('% artifacts/figures/root.svg') || !content.includes('.render-cache/') || !content.includes('\\\\usepackage{graphicx}')) process.exit(2);
 await writeFile(join(outdir, basename(source, '.tex') + '.pdf'), 'smoke pdf');
 await writeFile(join(outdir, basename(source, '.tex') + '.log'), 'smoke log');
+await writeFile(join(outdir, basename(source, '.tex') + '.synctex.gz'), gzipSync('Input:1:' + source + '\\nMagnification:1000\\nUnit:1\\nX Offset:0\\nY Offset:0\\n{1\\ng1,1:6553600,13107200'));
 `);
 await chmod(fakeTectonic, 0o755);
 const child = spawn(process.execPath, ['server/index.mjs'], {cwd: repoRoot, env: {...process.env, WORKBENCH_PORT: String(port), WORKBENCH_HOST: '127.0.0.1', WORKBENCH_STATE_PATH: statePath, WORKBENCH_LATEX_PATH: fakeTectonic, WORKBENCH_CODEX_PATH: fakeCodex, WORKBENCH_PI_PATH: fakeProviderCli, WORKBENCH_HERDR_PATH: fakeHerdr, WORKBENCH_PROVIDER_SETTINGS_PATH: path.join(sandbox, 'private/providers.json'), OPENAI_API_KEY: '', ANTHROPIC_API_KEY: '', GEMINI_API_KEY: '', GOOGLE_API_KEY: '', WORKBENCH_COMPATIBLE_API_KEY: '', ...Object.fromEntries(['CLAUDE', 'GEMINI', 'OPENCODE'].map(id => [`WORKBENCH_${id}_PATH`, path.join(sandbox, 'missing-cli')]))}, stdio: ['ignore', 'pipe', 'pipe']});
@@ -84,7 +86,7 @@ try {
   await writeFile(path.join(createdPath, 'artifacts', 'figures', 'root.svg'), figure);
   await writeFile(path.join(createdPath, 'writeups', 'local.svg'), figure);
   const compiled = await (await fetch(`${base}/api/writeups/compile`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({draftText: '\\documentclass{article}\\usepackage{svg}\\graphicspath{{../artifacts/figures/}}\\begin{document}% artifacts/figures/root.svg\\n\\includesvg[width=.8\\linewidth]{root}\\includegraphics{local.svg}\\end{document}'})})).json();
-  if (compiled.status !== 'complete' || compiled.pdf !== 'exports/main.pdf') throw new Error(`LaTeX SVG compilation failed: ${JSON.stringify(compiled)}`);
+  if (compiled.status !== 'complete' || compiled.pdf !== 'exports/main.pdf' || compiled.sourceMap?.[0]?.line !== 1) throw new Error(`LaTeX SVG compilation or source map failed: ${JSON.stringify(compiled)}`);
   const originalPaper = await readFile(path.join(createdPath, 'writeups/main.tex'), 'utf8');
   const staleRender = await fetch(`${base}/api/writeups/compile`, {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({draftText: 'stale render', expectedSource: 'not the saved source'})});
   if (staleRender.status !== 409 || await readFile(path.join(createdPath, 'writeups/main.tex'), 'utf8') !== originalPaper) throw new Error('A stale render overwrote saved source');
