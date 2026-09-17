@@ -30,7 +30,7 @@ export function FigureViewer({figures, initialIndex, url, close}) {
   useEffect(() => { setError(''); }, [figureUrl]);
   const fit = Math.min(bounds[0] / natural[0], bounds[1] / natural[1]);
   const keyDown = event => {
-    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.target.closest('input,select,textarea,[contenteditable]:not([contenteditable="false"]),.annotationPopover')) return;
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || (event.shiftKey && event.key !== '+') || event.target.closest('input,select,textarea,[contenteditable]:not([contenteditable="false"]),.annotationPopover')) return;
     if (event.key === 'ArrowRight') { event.preventDefault(); change(1); }
     if (event.key === 'ArrowLeft') { event.preventDefault(); change(-1); }
     if (event.key === '+' || event.key === '=') setZoom(z => Math.min(4, z + .25));
