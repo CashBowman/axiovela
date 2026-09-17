@@ -1,6 +1,6 @@
 {
   "name": "ml-theory-workbench",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -64,7 +64,8 @@
     "interaction:smoke": "node scripts/rendering-interactions-smoke.mjs",
     "interaction:perf": "node scripts/interaction-perf-smoke.mjs",
     "widgets:navigation:smoke": "node scripts/widget-navigation-smoke.mjs",
-    "library:navigation:smoke": "node scripts/library-navigation-smoke.mjs"
+    "library:navigation:smoke": "node scripts/library-navigation-smoke.mjs",
+    "codex:sidebar:test": "node --test scripts/codex-sidebar.test.mjs"
   },
   "dependencies": {
     "@citation-js/core": "^0.7.21",

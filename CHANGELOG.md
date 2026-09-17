@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.10
+
+- Safely clean up completed Axiovela-managed Codex sessions from native Recents while preserving app History, native transcripts and follow-up continuity.
+- Validate idle/loaded state before archive and keep errors nonfatal; retain queued work and user-facing titles.
+
 ## 0.2.9
 
 - Add project-filtered conversation history with search, rename, pins and reversible archiving; back up old metadata and preserve experiments/transcripts.

@@ -22,7 +22,7 @@ Search is bounded to 100 selected catalog projects, 5,000 turn records per proje
 
 ## Provider history
 
-Axiovela's logical conversation survives provider/profile changes; native sessions may restart with the existing historical handoff rules. These native sessions remain separate entries in providers that expose them. Axiovela does not merge or delete provider history.
+Axiovela's logical conversation survives provider/profile changes; native sessions may restart with the existing historical handoff rules. Native session IDs stay beneath the same logical conversation. Axiovela does not merge or delete provider history.
 
 Codex receives the saved Axiovela title on start/resume through `thread/name/set`, verified against the installed generated schema and the [official app-server documentation](https://learn.chatgpt.com/docs/app-server). Title failures are nonfatal and reported in connection activity. A renamed or repaired title reaches an existing external session on its next Axiovela turn; merely browsing history does not launch a provider. Codex's working directory remains the owning project directory. External sidebar grouping is controlled by the external application; Axiovela does not assume that a working directory creates a sidebar project. Other provider adapters retain their existing external-history behavior.
 
@@ -32,3 +32,15 @@ Codex receives the saved Axiovela title on start/resume through `thread/name/set
 - `npm run history:smoke`: isolated Electron fixture with 131 conversations across two projects; title repair, message search, rename/pin/archive/reload, resume/follow-up, cross-project navigation, bounded rendering and preservation of an existing figure. Screenshots: `.local/conversation-history/`. Set `AXIOVELA_HISTORY_TEST_BINARY` to run the same checks on a packaged executable.
 - `npm run assistant:smoke`: explicit Codex naming, rename on resume, unsupported-method fallback and existing protocol checks.
 - Run `npm run parallel:smoke`, project/security/backend/research checks, and the desktop build/package acceptance checks for integrations.
+
+## Codex sidebar cleanup (0.2.10)
+
+Axiovela History and saved turn records remain authoritative. After a successful matching root `turn/completed` notification, the runtime performs best-effort native sidebar cleanup for that Axiovela-managed session only. Both thread and turn IDs must match; worker, historical, failed and canceled completions cannot trigger it. Native archiving never sets Axiovela's `archived` flag, removes messages, or changes the follow-up queue.
+
+The adapter reads `thread/read` with `includeTurns: false`, requires the matching root ID and an `idle` or `notLoaded` status, and skips provider-reported `pinned`/`isPinned` threads. It then requests `thread/loaded/list` with `limit: 2`. Another loaded thread, a continuation cursor, malformed data, cancellation or any request failure prevents archiving. This deliberately conservative check protects descendants that archiving could unload. Each cleanup request has a 1.5-second timeout; cleanup errors cannot reject the completed turn. No background sweep or bulk archive is performed.
+
+Follow-ups resume the saved native ID. Only an explicit archived-session rejection allows unarchiving and one retry; accepted turns are never replayed. Existing fresh-session/profile and historical-handoff rules remain intact, and titles still come from saved manual titles or actual user requests. Active sessions can appear temporarily in Codex Recents. Sessions skipped for safety or unsupported APIs may remain there. An already-running app must restart to load an installed update.
+
+Compatibility was checked using `codex-cli 0.153.4 app-server generate-json-schema --experimental`: `thread/read`, `thread/loaded/list`, `thread/archive`, `thread/unarchive`, `thread/resume`, and `thread/name/set`. The generated Thread schema does not currently expose a pin field; optional provider-reported pin flags are respected when present, but unavailable pin information cannot be independently verified. Loaded-thread checks describe the connected app-server's view, not an atomic lock across external clients. See [official protocol documentation](https://learn.chatgpt.com/docs/app-server).
+
+`npm run codex:sidebar:test` covers conservative cleanup, timeouts/errors, retained native transcripts, repeated resume, accepted-turn counts, active workers, cancellation and unmanaged sessions. The History packaged smoke verifies the unchanged logical and native IDs across three turns and separate native/app archive state. `npm run parallel:smoke` exercises concurrent chats, follow-up queues, errors, Stop and reload in isolated fixtures. No real provider credentials or user projects are used.

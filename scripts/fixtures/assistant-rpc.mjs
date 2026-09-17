@@ -1,7 +1,7 @@
 // Deterministic native-session fixture. No network, credentials, or model calls.
 import readline from 'node:readline';
 import {randomUUID} from 'node:crypto';
-import {readFile, writeFile} from 'node:fs/promises';
+import {readFile, writeFile, appendFile} from 'node:fs/promises';
 import path from 'node:path';
 let session;
 process.stdout.write('null\n[]\nunstructured diagnostic noise\n');
@@ -13,6 +13,10 @@ for await (const line of readline.createInterface({input: process.stdin})) {
   if (id == null) continue;
   let result = {};
   try {
+    if (process.env.AXIOVELA_CODEX_FIXTURE_LOG) await appendFile(process.env.AXIOVELA_CODEX_FIXTURE_LOG, JSON.stringify({method, params: p}) + '\n');
+    if (process.env.AXIOVELA_CODEX_FIXTURE_FAULT === `${method}:timeout`) continue;
+    if (method === 'thread/resume' && process.env.AXIOVELA_CODEX_FIXTURE_FAULT === 'thread/resume:archived') throw new Error(`thread ${p.threadId} is archived`);
+    if (process.env.AXIOVELA_CODEX_FIXTURE_FAULT === `${method}:error`) throw new Error('Fixture method unavailable');
     if (method === 'model/list') result = {data: [{id: 'test-model', model: 'test-model', displayName: 'Test model', isDefault: true, supportedReasoningEfforts: [{reasoningEffort: 'low'}, {reasoningEffort: 'high'}], defaultReasoningEffort: 'low'}, {id: 'second-model', model: 'second-model', displayName: 'Second model', supportedReasoningEfforts: [{reasoningEffort: 'low'}], defaultReasoningEffort: 'low'}], nextCursor: null};
     if (method === 'config/read') result = {config: {model: 'test-model', model_reasoning_effort: 'low', privateToken: 'NEVER-EXPOSE-FIXTURE'}};
     if (method === 'thread/start' || method === 'thread/resume') {
@@ -32,6 +36,19 @@ for await (const line of readline.createInterface({input: process.stdin})) {
       await writeFile(store(session.id), JSON.stringify(session));
       result = {thread: {id: session.id}};
     }
+    if (method === 'thread/read') {
+      if (p.includeTurns !== false || p.threadId !== session?.id) throw new Error('Invalid metadata read');
+      result = {thread: {id: session.id, status: {type: 'idle'}, ...(session.pinned ? {pinned: true} : {})}};
+    }
+    if (method === 'thread/loaded/list') {
+      if (p.limit !== 2) throw new Error('Loaded list must be bounded');
+      result = {data: session.workers ? [session.id, 'active-worker'] : [session.id], nextCursor: null};
+    }
+    if (method === 'thread/archive') {
+      if (p.threadId !== session?.id || session.workers) throw new Error('Unsafe archive');
+      session.archived = true;
+      await writeFile(store(session.id), JSON.stringify(session));
+    }
     if (method === 'turn/start') {
       if (session.archiveOnStart) throw new Error(`session ${session.id} is archived. Run codex unarchive first.`);
       session.turns++;
@@ -39,12 +56,16 @@ for await (const line of readline.createInterface({input: process.stdin})) {
       result = {turn: {id: 'turn-1'}};
       const prompt = p.input[0].text;
       const request = prompt.match(/User request:\n([\s\S]*?)(?:\n\n|$)/)?.[1] || prompt;
+      session.workers = request.includes('FIXTURE_ACTIVE_WORKER');
+      session.history = [...(session.history || []), request];
+      await writeFile(store(session.id), JSON.stringify(session));
       if (request.includes('FIXTURE_CHILD')) {
         event('turn/started', {threadId: 'child-thread', turn: {id: 'child-turn'}});
         event('item/completed', {threadId: 'child-thread', item: {type: 'agentMessage', text: 'Inspection sent to lead agent'}});
         event('turn/completed', {threadId: 'child-thread', turn: {id: 'child-turn', status: 'completed'}});
         event('item/completed', {turnId: 'previous-turn', item: {type: 'agentMessage', text: 'Stale response'}});
         event('turn/completed', {turnId: 'previous-turn', turn: {id: 'previous-turn', status: 'completed'}});
+        event('turn/completed', {turnId: 'turn-1', turn: {id: 'previous-turn', status: 'completed'}});
         event('item/completed', {item: {type: 'agentMessage', text: 'Root is still working'}});
       }
       setTimeout(() => {

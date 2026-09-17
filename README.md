@@ -4,7 +4,7 @@
 
 <p align="center"><strong>The AI research workbench.</strong><br />Turn a question into experiments, measured results, and a manuscript.</p>
 
-<p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.9">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.9">Release notes</a></p>
+<p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.10">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.10">Release notes</a></p>
 
 ![Axiovela workflow: configure an experiment, inspect its measured results, and generate a research write-up](docs/assets/axiovela-demo.gif)
 
@@ -25,7 +25,7 @@ For mathematical research, explore [Axiovela Math](https://github.com/CashBowman
 
 ## Keep research moving in parallel
 
-Run an experiment, develop a manuscript, and explore another project at the same time. **Axiovela 0.2.9 lets independent chats work concurrently**, so you can keep prompting and reviewing while other tasks continue in the background.
+Run an experiment, develop a manuscript, and explore another project at the same time. **Axiovela 0.2.10 lets independent chats work concurrently**, so you can keep prompting and reviewing while other tasks continue in the background.
 
 - **Research and write together.** Run the experiment assistant and writing assistant simultaneously.
 - **Move freely between projects.** Switch tabs or start another conversation without interrupting active work.
@@ -47,35 +47,35 @@ Use Codex, Claude Code, Gemini CLI, OpenCode, Pi, or a supported API connection.
 
 Axiovela runs in its own window on **Linux, Windows, and macOS**. The desktop app includes its runtime; no Git, Node, npm, or GitHub account is needed for the example and basic project management.
 
-**Download Axiovela 0.2.9 · Stable release**
+**Download Axiovela 0.2.10 · Stable release**
 
 This release adds project-based conversation history with search, rename, pins and archiving, plus arrow navigation in Trials, figure cards, history results and workspace sections. Research data and transcripts are preserved; older conversation metadata is backed up before upgrading.
 
 **Windows**
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.9/Axiovela-0.2.9-win32-x64-Setup.exe"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/windows.png" alt="Download Windows: Intel / AMD · 64-bit" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.10/Axiovela-0.2.10-win32-x64-Setup.exe"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/windows.png" alt="Download Windows: Intel / AMD · 64-bit" width="320" height="88" /></a>
 
-[Windows ARM64 · portable ZIP](https://github.com/CashBowman/axiovela/releases/download/v0.2.9/Axiovela-0.2.9-win32-arm64.zip)
+[Windows ARM64 · portable ZIP](https://github.com/CashBowman/axiovela/releases/download/v0.2.10/Axiovela-0.2.10-win32-arm64.zip)
 
 **macOS**
 
-Version 0.2.9 Mac candidates await the required native distribution check and are not published yet. [Earlier Mac release and installation limits](https://github.com/CashBowman/axiovela/releases/tag/v0.2.8).
+Version 0.2.10 Mac candidates await the required native distribution check and are not published yet. [Earlier Mac release and installation limits](https://github.com/CashBowman/axiovela/releases/tag/v0.2.8).
 
 **Linux**
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.9/Axiovela-0.2.9-linux-x64.zip"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-zip.png" alt="Download Linux: 64-bit · ZIP archive" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.10/Axiovela-0.2.10-linux-x64.zip"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-zip.png" alt="Download Linux: 64-bit · ZIP archive" width="320" height="88" /></a>
 
-[Linux ARM64 · portable ZIP](https://github.com/CashBowman/axiovela/releases/download/v0.2.9/Axiovela-0.2.9-linux-arm64.zip)
+[Linux ARM64 · portable ZIP](https://github.com/CashBowman/axiovela/releases/download/v0.2.10/Axiovela-0.2.10-linux-arm64.zip)
 
-[Help choosing a download, portable ZIPs, and release notes](https://github.com/CashBowman/axiovela/releases/tag/v0.2.9)
+[Help choosing a download, portable ZIPs, and release notes](https://github.com/CashBowman/axiovela/releases/tag/v0.2.10)
 
 Existing projects and settings remain compatible. Open **Help → Try the example study**, or choose **Project** and connect your provider below the chat composer.
 
-[Installation and first session](docs/quick-start.md) · [Platform validation](https://github.com/CashBowman/axiovela/releases/tag/v0.2.9) · [Mac installation](docs/mac-installation.md)
+[Installation and first session](docs/quick-start.md) · [Platform validation](https://github.com/CashBowman/axiovela/releases/tag/v0.2.10) · [Mac installation](docs/mac-installation.md)
 
 ## Develop on your Mac or Windows computer
 
-The `main` branch includes the 0.2.9 release: a searchable Library with science and engineering results, passage and image feedback, project history and explained cross-project connections, concurrent chats across assistants and projects, background follow-up queues, responsive task status, a cleaner navigation header, guided update checks, and source/PDF exports. Three selectable [research profiles](docs/research-profiles.md) preserve domain-specific research instructions.
+The `main` branch includes the 0.2.10 release: a searchable Library with science and engineering results, passage and image feedback, project history and explained cross-project connections, concurrent chats across assistants and projects, background follow-up queues, responsive task status, a cleaner navigation header, guided update checks, and source/PDF exports. Three selectable [research profiles](docs/research-profiles.md) preserve domain-specific research instructions.
 
 Clone this repository and follow [Development setup](docs/development-setup.md) for the exact Mac, Windows, and Linux commands, local packaging, and acceptance checks. GitHub desktop and multi-OS builds run only when manually requested. See the current release record for device reports and remaining acceptance checks.
 
@@ -106,4 +106,4 @@ For the standalone, dependency-free example, run `node examples/linear-regressio
 Free to use, modify, and share under the [MIT License](LICENSE), without warranty and subject to its liability disclaimer. Read the [beta notice](BETA_NOTICE.md) before use. Existing projects and the `methodflow` and `ml-workbench` commands remain compatible. [Branding and compatibility](docs/branding.md)
 
 
-Version 0.2.9 preserves editable queued messages through errors and reopening, and lets Pi finish its own retries and context recovery. Version 0.2.4 can download and verify this update in the app; older installations need one manual upgrade. Installation remains manual.
+Version 0.2.10 preserves editable queued messages through errors and reopening, and lets Pi finish its own retries and context recovery. Version 0.2.4 can download and verify this update in the app; older installations need one manual upgrade. Installation remains manual.

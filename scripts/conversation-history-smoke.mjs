@@ -101,6 +101,21 @@ try {
   assert.deepEqual(await readFile(preservedFile), preserved);
   const jobs = (await api('/api/assistant?allConversations=1', first)).body.jobs;
   assert.equal(jobs.find(j => j.message === 'Continue this research').conversationId, firstJob.conversationId);
+  const nativeId = jobs.find(j => j.message === 'Continue this research').sessionId;
+  assert.equal(JSON.parse(await readFile(path.join(first, `.fixture-${nativeId}.json`), 'utf8')).archived, true);
+  for (const message of ['Follow up after native archive', 'Repeat follow-up after native archive']) {
+    await page.getByRole('textbox', {name:'Experiment Chatbot message'}).fill(message);
+    await page.getByRole('button', {name:'Send',exact:true}).click();
+    await page.getByRole('button', {name:'Stop task'}).waitFor();
+    await page.getByRole('button', {name:'Stop task'}).waitFor({state:'hidden'});
+    const next = (await api('/api/assistant?allConversations=1', first)).body.jobs.find(j => j.message === message);
+    assert.equal(next.status, 'complete'); assert.equal(next.conversationId, firstJob.conversationId); assert.equal(next.sessionId, nativeId);
+    assert.equal(await page.getByRole('combobox',{name:'Conversation',exact:true}).inputValue(), firstJob.conversationId);
+  }
+  const native = JSON.parse(await readFile(path.join(first, `.fixture-${nativeId}.json`), 'utf8'));
+  assert.equal(native.archived, true); assert.equal(native.turns, 3); assert.equal(native.history.length, 3);
+  const metadata = JSON.parse(await readFile(path.join(first, 'assistant/conversations', firstJob.conversationId + '.json'), 'utf8'));
+  assert.equal(metadata.archived, false, 'native sidebar cleanup must not archive app history');
   await page.getByRole('button', {name:'History',exact:true}).click();
   await page.getByRole('combobox', {name:'History project'}).selectOption('');
   await page.getByRole('textbox', {name:'Search conversations'}).fill('Compare OpenAI');

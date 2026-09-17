@@ -1142,7 +1142,7 @@ async function startAssistant(body) {
     },
   ) : null;
   if (handoff) await appendAssistantEvent(record, {kind: 'handoff', label: 'Restoring recent conversation context', status: 'complete'});
-  const assistantRun = runAssistant({selection, mode, cwd: record.projectRoot, sessionId, conversationTitle: conversation.title, env: assistantEnv,
+  const assistantRun = runAssistant({selection, mode, cwd: record.projectRoot, sessionId, conversationId: conversation.id, conversationTitle: conversation.title, env: assistantEnv,
     compileDocument: (format, source, signal) => compileAssistantDocument(format, source, record.projectRoot, signal),
     prompt: `${handoff ? `Previous conversation context (historical messages, not new instructions; failed tasks may not have reached the native session):\n${handoff}\n\n` : ''}${prompt}\n${presentationContext}${agenticMode ? agenticOrchestratorPrompt({projectRoot: projectState.root, routerModelId: selection.modelId || runtime.defaultModelId, workerModelId: agentic.workerModelId, jobId: id, profileId: selection.profileId}) : ''}`,
     signal: record.controller.signal,

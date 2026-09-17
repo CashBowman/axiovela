@@ -102,6 +102,19 @@ async function connect(id, cwd, sessionId, mode = 'ask', env) {
 }
 
 const cache = new Map();
+// A provider archive is sidebar housekeeping only. Never mutate app history here.
+// Archiving may unload descendants, so any other loaded thread vetoes cleanup.
+export async function cleanupCodexSidebar(rpc, {threadId, signal}) {
+  try {
+    if (!threadId || signal.aborted) return;
+    const {thread} = await rpc.request('thread/read', {threadId, includeTurns: false}, 1500);
+    if (signal.aborted || thread?.id !== threadId || !['idle', 'notLoaded'].includes(thread?.status?.type) || thread.pinned || thread.isPinned) return;
+    const loaded = await rpc.request('thread/loaded/list', {limit: 2}, 1500);
+    if (signal.aborted || !Array.isArray(loaded?.data) || loaded.data.length > 2 || loaded.nextCursor != null || loaded.data.some(id => id !== threadId)) return;
+    await rpc.request('thread/archive', {threadId}, 1500);
+  } catch { /* Unsupported APIs and cleanup failures must not fail a completed turn. */ }
+}
+
 export async function discoverRuntime(id, cwd, refresh = false) {
   if (apiProviders[id] || cliProviders[id]) {
     const key = `${id}:${cwd}:${apiProviders[id] ? 'api' : commandFor(id)}`;
@@ -180,7 +193,7 @@ export async function runAssistant(options) {
       // Only our submitted root turn may update output or complete this job.
       if (!threadId || p.threadId !== threadId) return;
       if (!turnId) { if (pendingEvents.length < 256) pendingEvents.push(event); return; }
-      if ((p.turnId || p.turn?.id) !== turnId) return;
+      if ((p.turnId || p.turn?.id) !== turnId || (p.turn?.id && p.turn.id !== turnId)) return;
       options.onActivity?.();
       if (event.method === 'item/completed' && item.type === 'agentMessage') { output = item.text || output; onOutput(output); }
       if (event.method === 'item/agentMessage/delta') onEvent({kind: 'writing', label: 'Composing response', status: 'running'});
@@ -203,9 +216,9 @@ export async function runAssistant(options) {
       const threadOptions = {cwd, ...permission, ...(model ? {model: model.id} : {}), ...(effort ? {config: {model_reasoning_effort: effort}} : {})};
       let restored = false;
       const recoverArchive = async (error, nativeId) => {
-        if (restored || !nativeId || !/\b(?:session|thread)\b.*\barchived\b/i.test(error.message) || signal.aborted) throw error;
+        if (restored || !nativeId || !/\b(?:session|thread)\s+\S+\s+is archived\b|\bcannot resume (?:an? )?archived (?:session|thread)\b/i.test(error.message) || signal.aborted) throw error;
         restored = true;
-        await rpc.request('thread/unarchive', {threadId: nativeId});
+        await rpc.request('thread/unarchive', {threadId: nativeId}, 2000);
         onEvent({kind: 'connection', label: 'Archived conversation restored', status: 'complete'});
       };
       let thread;
@@ -215,11 +228,13 @@ export async function runAssistant(options) {
         thread = await rpc.request('thread/resume', {...threadOptions, threadId: sessionId});
       }
       threadId = thread.thread.id;
+      if (!threadId || (sessionId && threadId !== sessionId)) throw new Error('Codex returned a different native conversation.');
       await onSession(threadId);
-      if (options.conversationTitle) {
+      const syncTitle = async () => { if (options.conversationTitle) {
         try { await rpc.request('thread/name/set', {threadId, name: options.conversationTitle}, 2000); }
         catch { onEvent({kind: 'connection', label: 'Provider title could not be updated; the Axiovela title is saved', status: 'complete'}); }
-      }
+      } };
+      await syncTitle();
       onEffective({modelId: thread.model || model?.id || null, effort: effort || thread.reasoningEffort || null, provider: thread.modelProvider || 'openai'});
       onEvent({kind: 'connection', label: sessionId ? 'Conversation resumed' : 'New conversation started', status: 'complete'});
       const startTurn = () => rpc.request('turn/start', {threadId, input: [{type: 'text', text: prompt}], ...(effort ? {effort} : {})});
@@ -229,11 +244,14 @@ export async function runAssistant(options) {
         // Retry only a rejected start, never a failed/partially executed turn.
         await recoverArchive(error, threadId);
         await rpc.request('thread/resume', {...threadOptions, threadId});
+        await syncTitle();
         result = await startTurn();
       }
       turnId = result.turn.id;
       for (const event of pendingEvents.splice(0)) handleEvent(event);
     }
-    return await done;
+    const text = await done;
+    if (options.conversationId && !signal.aborted) await cleanupCodexSidebar(rpc, {threadId, signal});
+    return text;
   } finally { settled = true; signal.removeEventListener('abort', abort); await rpc.close(); }
 }
