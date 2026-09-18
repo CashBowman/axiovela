@@ -6,7 +6,7 @@
 
 <p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.11">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.11">Release notes</a></p>
 
-https://github.com/user-attachments/assets/f6fb5ab7-15eb-414e-85ad-455795dcaad1
+https://github.com/user-attachments/assets/7ac19088-7d1c-4231-a579-c2ba46f0c38c
 
 [Download the demo video](docs/demo/axiovela-demo.webm) · [Poster](docs/demo/axiovela-demo.jpg)
 
