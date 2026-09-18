@@ -6,7 +6,9 @@
 
 <p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.11">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.11">Release notes</a></p>
 
-![Axiovela workflow: configure an experiment, inspect its measured results, and generate a research write-up](docs/assets/axiovela-demo.gif)
+https://github.com/user-attachments/assets/f6fb5ab7-15eb-414e-85ad-455795dcaad1
+
+[Download the demo video](docs/demo/axiovela-demo.webm) · [Poster](docs/demo/axiovela-demo.jpg)
 
 *A short end-to-end product demo.*
 
