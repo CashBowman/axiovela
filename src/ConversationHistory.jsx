@@ -20,7 +20,9 @@ export default function ConversationHistory({request, root, onOpen, onUpdated, d
     setProjectId(null); setError(''); setData({conversations: [], warnings: [], total: 0});
     api.current('/api/projects').then(result => {
       if (!active) return;
-      setProjects(result.projects); setProjectId(result.projects.find(p => p.root === root)?.id || '');
+      const current = result.projects.find(p => p.root === root);
+      setProjects(current ? [current] : []); setProjectId(current?.id || null);
+      if (!current) setError('Open this project before browsing its conversations.');
     }).catch(e => { if (active) setError(e.message); });
     return () => { active = false; };
   }, [open, root]);
@@ -54,17 +56,17 @@ export default function ConversationHistory({request, root, onOpen, onUpdated, d
   }
   return <><button onClick={() => { setOffset(0); setQuery(''); setArchived(false); setOpen(true); }} disabled={disabled}>History</button>
     <dialog ref={dialog} className="conversationHistory" aria-labelledby="conversation-history-title" onCancel={() => { setOpen(false); setEditing(''); }}>
-      <header><div><h2 id="conversation-history-title">Conversation history</h2><p>Find work by project, topic, or a phrase you remember.</p></div><button onClick={close} aria-label="Close conversation history">Close</button></header>
+      <header><div><h2 id="conversation-history-title">Conversation history</h2><p>Find work in this project by topic or a phrase you remember.</p></div><button onClick={close} aria-label="Close conversation history">Close</button></header>
       <div className="historyFilters">
         <label>Search<input autoFocus aria-label="Search conversations" placeholder="Search titles and messages" value={query} maxLength={200} onChange={e => filter(setQuery, e.target.value)}/></label>
-        <label>Project<select aria-label="History project" value={projectId || ''} onChange={e => filter(setProjectId, e.target.value)}><option value="">All conversations</option>{projects.map(p => <option key={p.id} value={p.id}>{p.name}{p.available ? '' : ' (unavailable)'}</option>)}</select></label>
+        <label>Project<select aria-label="History project" value={projectId || ''} onChange={e => filter(setProjectId, e.target.value)}>{projects.map(p => <option key={p.id} value={p.id}>{p.name}{p.available ? '' : ' (unavailable)'}</option>)}</select></label>
         <label>Show<select aria-label="History visibility" value={archived ? 'archived' : 'active'} onChange={e => filter(setArchived, e.target.value === 'archived')}><option value="active">Active</option><option value="archived">Archived</option></select></label>
       </div>
       {error && <p role="alert" className="renderError">{error}</p>}
       {data.warnings.map(w => <p key={w} className="historyNotice">{w}</p>)}
       <p role="status">{loading || projectId === null ? 'Searching…' : `${data.total} conversation${data.total === 1 ? '' : 's'}`}</p>
       <div className="historyResults" aria-busy={loading} onKeyDown={event => navigateItems(event, '.historyOpen')}>
-        {!loading && !data.conversations.length && <p>No conversations found. Try another project, search phrase, or Archived.</p>}
+        {!loading && !data.conversations.length && <p>No conversations found. Try another search phrase or Archived.</p>}
         {!loading && data.conversations.map((item, index) => <section key={identity(item)} className="historyItem">
           {(index === 0 || Boolean(data.conversations[index - 1].pinned) !== Boolean(item.pinned)) && <h3>{item.pinned ? 'Pinned' : 'Recent'}</h3>}
           <button className="historyOpen" tabIndex={identity(item) === entry ? 0 : -1} onFocus={() => setFocused(identity(item))} disabled={working || disabled} onClick={() => openItem(item)} title={item.title}><strong>{item.title}</strong><small>{item.projectName} · {item.role === 'writing' ? 'Writing' : 'Research'} · {date(item.updatedAt)} · {item.id.slice(-8)}</small><span>{item.excerpt || 'No messages yet'}</span></button>

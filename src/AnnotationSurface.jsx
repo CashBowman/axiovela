@@ -1,6 +1,7 @@
 import {MessageSquarePlus} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import {
+  feedbackExcluded,
   capturePassage,
   hasContentMutation,
   textProjection,
@@ -152,7 +153,7 @@ export default function AnnotationSurface({
     if (
       !annotating ||
       event.target.closest(
-        "[data-annotation-ui],button,a,input,textarea,select,summary,img",
+        feedbackExcluded + ",a,img",
       )
     )
       return;

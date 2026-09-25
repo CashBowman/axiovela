@@ -127,8 +127,8 @@ function assistantReply(record) {
 }
 
 function assistantHistoryMessages(records = []) {
-  if (!records.length) return messages0;
-  return [messages0[0], ...records.flatMap(record => [
+  if (!records.length) return [];
+  return [...records.flatMap(record => [
     ['user', record.message, `${record.id}-user`, record.role || 'experiment', record],
     ...((['complete', 'failed', 'canceled'].includes(record.status) || record.output) ? [['bot', assistantReply(record), record.id, record.role || 'experiment', record]] : []),
   ])];
@@ -310,8 +310,9 @@ function Pill({children, tone = 'blue'}) {
   return <span className={'pill ' + tone}>{children}</span>;
 }
 
-function Pane({title, children, tag, action}) {
-  return <AnnotatedContent className="pane" title={title}><header data-annotation-ui="true" className="paneHead"><div>{tag && <Pill tone={tag.tone}>{tag.label}</Pill>}<strong>{title}</strong></div>{action}</header>{paneHints[title] && <p className="paneHint paneIntro">{paneHints[title]}</p>}{children}</AnnotatedContent>;
+function Pane({title, children, tag, action, feedback = false}) {
+  const Surface = feedback ? AnnotatedContent : "section";
+  return <Surface className="pane" {...(feedback ? {title} : {})}><header data-annotation-ui="true" className="paneHead"><div>{tag && <Pill tone={tag.tone}>{tag.label}</Pill>}<strong>{title}</strong></div>{action}</header>{paneHints[title] && <p className="paneHint paneIntro">{paneHints[title]}</p>}{children}</Surface>;
 }
 
 function Chart() {
@@ -580,7 +581,7 @@ function App() {
   const [newStudy, setNewStudy] = useState(false);
   const [studyQuestion, setStudyQuestion] = useState('Test whether guided sampling remains reliable under high noise with matched seeds.');
   const [studyPlan, setStudyPlan] = useState(null);
-  const [messages, setMessages] = useState(messages0);
+  const [messages, setMessages] = useState([]);
   const role = tab === 'Write-up' ? 'writing' : 'experiment';
   const [conversations, setConversations] = useState([]);
   const [activeConversations, setActiveConversations] = useState({});
@@ -752,6 +753,7 @@ function App() {
       parallel.adopt(await apiRequest('/api/assistant/activity'));
       const project = await apiRequest('/api/project');
       if (!active) return;
+      projectRootRef.current = project.root;
       setProjectInfo(project);
       setProjectPath(project.root || '');
       setRunRecords(project.runs || []);
@@ -760,7 +762,7 @@ function App() {
         // immediately warns about an unsaved document that cannot be saved.
         draftValue.current = ''; draftDirty.current = false; draftRevision.current++;
         setDraftTextState('');
-        setMessages(messages0);
+        setMessages([]);
         return;
       }
       const savedFormat = preferredWriteupFormat(project.root, project.writeups);
@@ -942,6 +944,7 @@ function App() {
     if (root) try { localStorage.setItem(`ml-workbench-conversations:${root}`, JSON.stringify(next)); } catch { /* selection remains available in memory */ }
   };
   const applyAssistantHistory = (history, root) => {
+    if (projectRootRef.current !== root) return;
     const available = history.conversations || [];
     let saved = {};
     try { saved = JSON.parse(localStorage.getItem(`ml-workbench-conversations:${root}`) || '{}'); } catch { /* use most recent conversation */ }
@@ -973,6 +976,7 @@ function App() {
       if (projectAssistantBusy) rememberDraft(); else await saveSource();
       const project = await apiRequest('/api/project/open', {method: 'POST', body: JSON.stringify({path: selectedPath, create, initializeGit})});
       projectRootRef.current = project.root;
+      setConversations([]); setActiveConversations({experiment: '', writing: ''}); setMessages([]);
       const nextFormat = preferredWriteupFormat(project.root, project.writeups);
       setWriteupFormat(nextFormat);
       setInputs(projectDrafts.current[project.root]?.inputs || {}); setAttachments(projectDrafts.current[project.root]?.attachments || {}); setConversationError('');
@@ -1043,9 +1047,9 @@ function App() {
       if (selection.error) throw selection.error;
       const items = await importData(apiRequest, selection.files || selection.paths ? selection : {files: [selection]});
       setChatAttachment({name: items.map(item => item.name).join(', '), content: `Attached workspace data (use appropriate tools to inspect these files):\n${items.map(item => JSON.stringify({name: item.name, path: item.path, bytes: item.bytes, format: item.format})).join('\n')}`});
-      if (items.some(item => item.skipped)) setMessages(current => [...current, ['bot', importSummary(items), `attachment-${Date.now()}`, role, {conversationId}]]);
+      if (items.some(item => item.skipped)) setMessages(current => [...current, ['bot', importSummary(items), `attachment-${Date.now()}`, role, {conversationId, projectRoot: projectInfo?.root}]]);
     } catch (error) {
-      setMessages(current => [...current, ['bot', `Could not attach data: ${error.message}`, `attachment-${Date.now()}`, role, {conversationId}]]);
+      setMessages(current => [...current, ['bot', `Could not attach data: ${error.message}`, `attachment-${Date.now()}`, role, {conversationId, projectRoot: projectInfo?.root}]]);
     } finally { try { await refreshProject(); } finally { setAttachmentBusy(false); } }
   };
   const approveRunner = async () => {
@@ -1264,7 +1268,7 @@ function App() {
   }}/></div>{conversationError && <p className="renderError" role="alert">{conversationError}</p>}</>;
 
   const modelControl = <ModelPicker onConnectionOpened={() => setConnectionRequest(0)} connectionRequest={connectionRequest} role={role} selection={selections[role]} capabilities={capabilities} busy={chatBusy || conversationBusy || agenticStarting} loading={modelLoading} error={modelError} onRefresh={() => refreshModels(true)} onSave={saveModel} onSaveProfile={saveResearchProfile} onSaveConnection={saveConnection} onNewSession={newConversation}/>;
-  const assistant = <ChatbotPane artifacts={projectInfo?.artifacts} beforeApply={async record=>{if(record.projectRoot!==projectRootRef.current)throw Error("The active project changed.");await saveSource();}} annotationCount={feedback.selected.length} request={apiRequest} onApplied={()=>{void refreshWriteup(writeupFormat,true);void refreshProject();}} key={`${role}:${conversationId}`} conversationControl={conversationControl} queueControl={<PromptQueue items={queuedPrompts} controls={parallel} chatKey={currentChatKey}/>} ready={feedback.ready && !agenticStarting && historyReady && !conversationBusy && !modelLoading && Boolean(capabilities)} projectRoot={projectInfo?.root || ''} title={tab === 'Write-up' ? 'Research Assistant' : 'Experiment Chatbot'} messages={[...messages.filter(m => String(m[2]).startsWith('attachment-') && m[3] === role && m[4]?.conversationId === conversationId), ...assistantHistoryMessages(parallel.records.filter(r => r.projectRoot === projectInfo?.root && r.role === role && (r.conversationId || '') === conversationId)), ...(parallel.pending[currentChatKey] ? [['user', parallel.pending[currentChatKey].body.message, 'pending', role, {conversationId}]] : [])]} input={input} setInput={setInput} send={send} attach={attach} dropAttachment={dropAttachment} attachmentName={chatAttachment?.name} clearAttachment={() => setChatAttachment(null)} busy={chatBusy || attachmentBusy} attachmentBusy={attachmentBusy} assistantProgress={assistantProgress} assistantEvents={assistantEvents} lastActivityAt={activeRecord?.lastActivityAt} statusError={activeRecord?.statusError} agenticActivity={agenticActivity} permissionMode={permissionMode} setPermissionMode={setPermissionMode} cancelAssistant={cancelAssistant} modelControl={modelControl} engineName={capabilities?.connections?.find(c => c.id === selections[role].adapterId)?.name || selections[role].adapterId} renderDocument={renderChatDocument} supportedModes={capabilities?.connections?.find(c => c.id === selections[role].adapterId)?.modes || ['ask', 'auto', 'full']} agenticMode={role === 'experiment' && agenticMode} setAgenticMode={role === 'experiment' ? setAgenticMode : null} agentic={capabilities?.agentic} agenticStarting={agenticStarting}/>;
+  const assistant = <ChatbotPane artifacts={projectInfo?.artifacts} beforeApply={async record=>{if(record.projectRoot!==projectRootRef.current)throw Error("The active project changed.");await saveSource();}} annotationCount={feedback.selected.length} request={apiRequest} onApplied={()=>{void refreshWriteup(writeupFormat,true);void refreshProject();}} key={currentChatKey} conversationControl={conversationControl} queueControl={<PromptQueue items={queuedPrompts} controls={parallel} chatKey={currentChatKey}/>} ready={feedback.ready && !agenticStarting && historyReady && !conversationBusy && !modelLoading && Boolean(capabilities)} projectRoot={projectInfo?.root || ''} title={tab === 'Write-up' ? 'Research Assistant' : 'Experiment Chatbot'} messages={[...messages.filter(m => String(m[2]).startsWith('attachment-') && m[4]?.projectRoot === projectInfo?.root && m[3] === role && m[4]?.conversationId === conversationId), ...assistantHistoryMessages(parallel.records.filter(r => r.projectRoot === projectInfo?.root && r.role === role && (r.conversationId || '') === conversationId)), ...(parallel.pending[currentChatKey] ? [['user', parallel.pending[currentChatKey].body.message, 'pending', role, {conversationId}]] : [])]} input={input} setInput={setInput} send={send} attach={attach} dropAttachment={dropAttachment} attachmentName={chatAttachment?.name} clearAttachment={() => setChatAttachment(null)} busy={chatBusy || attachmentBusy} attachmentBusy={attachmentBusy} assistantProgress={assistantProgress} assistantEvents={assistantEvents} lastActivityAt={activeRecord?.lastActivityAt} statusError={activeRecord?.statusError} agenticActivity={agenticActivity} permissionMode={permissionMode} setPermissionMode={setPermissionMode} cancelAssistant={cancelAssistant} modelControl={modelControl} engineName={capabilities?.connections?.find(c => c.id === selections[role].adapterId)?.name || selections[role].adapterId} renderDocument={renderChatDocument} supportedModes={capabilities?.connections?.find(c => c.id === selections[role].adapterId)?.modes || ['ask', 'auto', 'full']} agenticMode={role === 'experiment' && agenticMode} setAgenticMode={role === 'experiment' ? setAgenticMode : null} agentic={capabilities?.agentic} agenticStarting={agenticStarting}/>;
   const right = tab === 'Write-up' ? <>{assistant}<WriteupAssetsPane projectRoot={projectInfo?.root} key={projectInfo?.root} runs={projectInfo?.runs} artifacts={projectInfo?.artifacts || []} bibliography={bibliography} editBibliography={openBibliographyEditor} insertArtifact={insertArtifact} projectActive={Boolean(projectInfo?.root)}/></> : assistant;
 
   return <FeedbackContext.Provider value={{...feedback,sources:library.state.papers,openSource:id=>{library.setSelected(id);library.setView("read");setTab("Library");},draftFollowup:setInput}}><WorkspaceFeedback/><main className="app"><div className="projectStrip"><div className="projectBrand"><div className="brandMark"><WorkbenchMark/></div><div className="brand">Axiovela</div></div><ProjectNavigator current={projectInfo?.root} tabs={projectTabs} busy={projectBusy || attachmentBusy || sourceBusy} api={apiRequest} onBrowse={() => setProjectDialog(true)} onOpen={async (root, runId) => { const p = await openProject(root, false, false); if (!p) throw new Error("Could not open this project. Check that the folder is available."); if (runId) { setSelectedRunId(runId); setTab("Results"); } }}/><div className="projectTabs" aria-label="Open projects">{projectTabs.map(project => <div key={project.root} className={project.root === projectInfo?.root ? 'activeProjectTab' : ''}><button aria-pressed={project.root === projectInfo?.root} title={project.root} disabled={projectBusy} onClick={() => project.root !== projectInfo?.root && openProject(project.root, false, false)}>{project.name}{parallel.records.some(r => r.projectRoot === project.root && r.status === 'running') && <span className="projectActivityDot" aria-label="Tasks running"> ●</span>}</button><button aria-label={`Close tab ${project.name}`} disabled={project.root === projectInfo?.root || parallel.records.some(r => r.projectRoot === project.root && r.status === 'running') || parallel.queue.some(q => q.root === project.root) || Object.values(parallel.pending).some(item => item.root === project.root)} onClick={() => setProjectTabs(current => current.filter(p => p.root !== project.root))}><X size={12}/></button></div>)}<button aria-label="Project" title="Open another project" onClick={() => setProjectDialog(true)}><Plus size={14}/></button></div></div><header className="topbar"><nav aria-label="Workspace sections" onKeyDown={event => navigateItems(event, '[data-workspace-tab]', {axis: 'horizontal', activate: true})}>{tabs.map(x => <button data-workspace-tab="" tabIndex={tab === x ? 0 : -1} aria-pressed={tab === x} onClick={() => setTab(x)} className={tab === x ? 'selected' : ''} key={x}>{x}</button>)}</nav><div className="topActions"><span className="parallelStatus" role="status">{parallel.records.filter(r => r.status === 'running').length > 0 ? `● ${parallel.records.filter(r => r.status === 'running').length} tasks running` : ''}</span><span className={`backendStatus ${backendOnline ? 'onlineStatus' : 'offlineStatus'}`} title="Local workspace connection">● {window.methodflowDesktop ? (backendOnline ? 'Ready' : 'Connecting…') : (backendOnline ? 'Backend online' : 'Backend offline')}</span><button className="lightBtn" onClick={() => setDatasetDialog(true)} disabled={!projectInfo?.root} title={projectInfo?.root ? "Import or preview project datasets" : "Open a project to link a dataset"}><Paperclip size={15}/> Link dataset</button><button className="lightBtn" onClick={resetLayout}><RefreshCcw size={15}/> Reset layout</button></div></header>

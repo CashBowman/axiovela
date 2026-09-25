@@ -1,3 +1,5 @@
+Feedback is available only in designated research content, document previews and readers. Chat, source editors, navigation, controls and configuration are excluded. Selections must remain within readable content.
+
 # Passage feedback and Library
 
 Annotations are always available. Click a sentence or drag a passage in a summary,
