@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtemp, mkdir, writeFile, readFile, symlink, rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import {previewFigureRemoval, removeFigure, restoreFigure, removedFigures} from '../server/figure-actions.mjs';
+import {previewFigureRemoval, removeFigure, restoreFigure, removedFigures, figureCleanupContext} from '../server/figure-actions.mjs';
 test('review, revision guard, recoverable deletion and no-overwrite restore', async () => {
  const root=await mkdtemp(path.join(os.tmpdir(),'figure-removal-'));
  try {
@@ -15,9 +15,10 @@ test('review, revision guard, recoverable deletion and no-overwrite restore', as
   await writeFile(file,'revised'); await assert.rejects(removeFigure(root,{path:name,revision:preview.revision}),/changed/);
   const review=await previewFigureRemoval(root,name), record=await removeFigure(root,review);
   await assert.rejects(readFile(file),{code:'ENOENT'}); assert.equal((await removedFigures(root)).length,1);
+  assert.match(await figureCleanupContext(root), /Do not regenerate/); assert.match(await figureCleanupContext(root), /test.svg/); assert.match(await figureCleanupContext(root), /read-only/);
   assert.equal(await readFile(path.join(root,'plot.py'),'utf8'),'# writes test.svg and other.svg');
   await writeFile(file,'new work');await assert.rejects(restoreFigure(root,record),/not overwritten/);assert.equal(await readFile(file,'utf8'),'new work');
-  await rm(file);await restoreFigure(root,record);assert.equal(await readFile(file,'utf8'),'revised');assert.deepEqual(await removedFigures(root),[]);
+  await rm(file);await restoreFigure(root,record);assert.equal(await readFile(file,'utf8'),'revised');assert.deepEqual(await removedFigures(root),[]); assert.equal(await figureCleanupContext(root), '');
   await assert.rejects(previewFigureRemoval(root,'artifacts/figures/../../plot.py'));
   await symlink(path.join(root,'plot.py'),path.join(root,'artifacts/figures/link.svg'));await assert.rejects(previewFigureRemoval(root,'artifacts/figures/link.svg'),/Symlinks/);
   await assert.rejects(restoreFigure(root,{id:'../../plot.py'}),/Invalid/);

@@ -65,3 +65,5 @@ When updating this file, preserve this bar for all agents and keep entries conci
 - Scoped widget keys: `src/item-navigation.mjs`; `npm run widgets:navigation:smoke` covers Trials, grouped figure cards/viewer and history results. Keep arrow handling on primary items, respect modified/editing keys, clamp at boundaries, and preserve independent secondary actions. Workspace section keys activate; history/figure list keys only focus.
 
 - Figure removal: `server/figure-actions.mjs` and `src/FigureActions.jsx`. Recovery lives in project `.axiovela-trash/figures/`; preserve revision checks, exclusive restore and active-task guards. The reference scan is bounded literal matching, never an automatic code/discussion rewrite. `npm run figures:test` and `npm run figures:smoke` cover recovery and compact provider usage.
+
+- Figure removal intents live in recovery records; `figureCleanupContext` is read for every admitted assistant turn and Restore cancels the intent. Keep cleanup idempotent, project-scoped and access-aware. `figures:test` and `figures:smoke` cover recovery and prompt attachment.

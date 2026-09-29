@@ -279,3 +279,7 @@ research project, production signing key, published release, or GitHub workflow
 was changed or used by these regression tests. No Mac/Windows installer upgrade
 or Linux DEB/RPM installation was run; these results do not establish native
 update or failed-installer recovery support.
+
+## 0.2.15: durable figure cleanup
+
+Trash confirmation adds a project-scoped reminder to subsequent assistant prompts. Restoring the figure cancels it. Source cleanup follows the active access mode and protects shared outputs and historical sessions.

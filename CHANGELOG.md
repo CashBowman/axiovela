@@ -1,3 +1,9 @@
+## 0.2.15
+
+- Red trash buttons at the top right of figure cards and the viewer open a direct confirmation. Right-click and keyboard actions also open it.
+- Confirmed removals automatically add project-scoped cleanup instructions to subsequent assistant prompts. Cleanup respects access, shared code and historical conversations. Restore removes the reminder; files remain recoverable.
+- Built and published locally for all six desktop targets. Windows unsigned; Mac ad-hoc signed, unnotarized. Native Windows/Mac acceptance remains pending.
+
 ## 0.2.14
 
 Recoverable figure actions and cleanup review. Compact chat context and remaining usage details. See the matching release notes.
