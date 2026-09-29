@@ -17,6 +17,7 @@ for (const key of Object.keys(env)) if (/^(WORKBENCH_|OPENAI_|ANTHROPIC_|GEMINI_
 const fixture = path.join(tmp, 'codex.mjs');
 await writeFile(fixture, await readFile('scripts/fixtures/assistant-rpc.mjs'));
 env.WORKBENCH_CODEX_PATH = fixture;
+for (const id of ['PI','CLAUDE','GEMINI','OPENCODE']) env[`WORKBENCH_${id}_PATH`] = path.join(tmp, 'unavailable-provider');
 let app;
 try {
   app = await electron.launch({executablePath, args: packagedBinary ? [] : [root], env, chromiumSandbox: true});
@@ -81,6 +82,33 @@ try {
   await page.waitForResponse(response => new URL(response.url()).pathname === '/api/project');
   assert.equal(await revisedCard.getAttribute('src'), newUrl);
   await page.getByRole('button', {name: 'Close figure viewer'}).click();
+  await page.getByRole('button', {name:'Context and usage',exact:true}).click();
+  await page.getByText('Context size not reported by this connection.',{exact:true}).waitFor();
+  await page.keyboard.press('Escape');
+  await page.getByRole('button',{name:'Remove annotation 1 from message',exact:true}).click();
+  await page.getByRole('textbox',{name:'Experiment Chatbot message'}).fill('FIXTURE_STATE');
+  await page.getByRole('button',{name:'Send',exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector('.usageMeterButton')?.textContent.includes('20%')).catch(async e=>{console.error(await page.locator('.cleanChat').innerText());throw e;});
+  await page.getByRole('button',{name:'Context and usage',exact:true}).click();
+  await page.getByText('65% left',{exact:true}).waitFor();
+  await page.keyboard.press('Escape');
+  await revisedCard.click({button:'right'});
+  await page.getByRole('menuitem',{name:'Remove figure…',exact:true}).click();
+  await page.getByRole('button',{name:'Remove figure',exact:true}).click();
+  await page.getByRole('button',{name:'Undo removal',exact:true}).waitFor();
+  await assert.rejects(readFile(file),{code:'ENOENT'});
+  await page.getByRole('button',{name:'Undo removal',exact:true}).click();
+  await revisedCard.waitFor(); assert.equal(await readFile(file,'utf8'),svg(480));
+  await page.getByRole('button',{name:'Enlarge Revised curve',exact:true}).focus();
+  await page.keyboard.press('Shift+F10');
+  await page.getByRole('menuitem',{name:'Remove figure…',exact:true}).click();
+  await page.getByRole('button',{name:'Remove figure',exact:true}).click();
+  await page.getByRole('button',{name:'Undo removal',exact:true}).waitFor();
+  await page.getByRole('button',{name:'Close figure actions',exact:true}).click();
+  await page.getByText('Removed figures',{exact:true}).click();
+  await page.getByRole('button',{name:'Restore',exact:true}).click();
+  await revisedCard.waitFor();
+  await page.screenshot({path:process.env.AXIOVELA_FEATURE_SCREENSHOT || '/tmp/axiovela-figure-actions.png'});
   console.log('Figure edit smoke passed: same-path replacement refreshes the card, open viewer, title, filmstrip and download without duplicates or poll-driven reloads.');
 } finally {
   await app?.evaluate(({dialog}) => { dialog.showMessageBox = async () => ({response: 1}); }).catch(() => {});

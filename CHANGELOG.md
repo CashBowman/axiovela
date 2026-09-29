@@ -1,3 +1,7 @@
+## 0.2.14
+
+Recoverable figure actions and cleanup review. Compact chat context and remaining usage details. See the matching release notes.
+
 # Changelog
 
 ## 0.2.13 — 2026-09-29

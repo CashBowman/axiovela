@@ -18,6 +18,7 @@ for await (const line of readline.createInterface({input: process.stdin})) {
     if (method === 'thread/resume' && process.env.AXIOVELA_CODEX_FIXTURE_FAULT === 'thread/resume:archived') throw new Error(`thread ${p.threadId} is archived`);
     if (process.env.AXIOVELA_CODEX_FIXTURE_FAULT === `${method}:error`) throw new Error('Fixture method unavailable');
     if (method === 'model/list') result = {data: [{id: 'test-model', model: 'test-model', displayName: 'Test model', isDefault: true, supportedReasoningEfforts: [{reasoningEffort: 'low'}, {reasoningEffort: 'high'}], defaultReasoningEffort: 'low'}, {id: 'second-model', model: 'second-model', displayName: 'Second model', supportedReasoningEfforts: [{reasoningEffort: 'low'}], defaultReasoningEffort: 'low'}], nextCursor: null};
+    if (method === 'account/rateLimits/read') result = {rateLimits:{limitId:'codex',primary:{usedPercent:35,windowDurationMins:300,resetsAt:1900000000}}};
     if (method === 'config/read') result = {config: {model: 'test-model', model_reasoning_effort: 'low', privateToken: 'NEVER-EXPOSE-FIXTURE'}};
     if (method === 'thread/start' || method === 'thread/resume') {
       session = method === 'thread/resume' ? JSON.parse(await readFile(store(p.threadId), 'utf8')) : {id: randomUUID(), turns: 0};
@@ -69,6 +70,8 @@ for await (const line of readline.createInterface({input: process.stdin})) {
         event('item/completed', {item: {type: 'agentMessage', text: 'Root is still working'}});
       }
       setTimeout(() => {
+        event('thread/tokenUsage/updated', {tokenUsage:{last:{totalTokens:2000},total:{totalTokens:99000},modelContextWindow:10000}});
+        event('thread/tokenUsage/updated', {threadId:'child-thread',tokenUsage:{last:{totalTokens:9999},modelContextWindow:10000}});
         event('item/started', {item: {type: 'commandExecution', command: 'private raw output'}});
         event('item/completed', {item: {type: 'fileChange'}});
         if (request.includes('FIXTURE_HANG')) return;

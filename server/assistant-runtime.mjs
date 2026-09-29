@@ -1,3 +1,4 @@
+import {codexContext, codexLimits} from './provider-usage.mjs';
 import {profileId} from './research-profiles.mjs';
 import {spawn} from 'node:child_process';
 import {EventEmitter} from 'node:events';
@@ -167,17 +168,22 @@ export async function runAssistant(options) {
   signal.addEventListener('abort', abort, {once: true});
   rpc.on('failure', error => { if (!settled) rejectDone(error); });
   rpc.on('notice', label => onEvent({kind: 'input', label, status: 'running'}));
+  let usage = {};
+  const reportUsage = patch => { usage = {...usage, ...patch, measuredAt: new Date().toISOString()}; Promise.resolve(options.onUsage?.(usage)).catch(() => {}); };
+  const readLimits = async () => { try { const value = await rpc.request('account/rateLimits/read', {}, 1500); reportUsage({limits: codexLimits(value)}); } catch { /* Older runtimes and API accounts may not expose quota. */ } };
   let output = '';
   const pendingEvents = [];
   const handleEvent = event => {
     if (settled) return;
     if (selection.adapterId === 'codex') {
       const p = event.params || {}, item = p.item || {};
+      if (event.method === 'account/rateLimits/updated') { void readLimits(); return; }
       // Workers and resumed historical turns share the notification stream.
       // Only our submitted root turn may update output or complete this job.
       if (!threadId || p.threadId !== threadId) return;
       if (!turnId) { if (pendingEvents.length < 256) pendingEvents.push(event); return; }
       if ((p.turnId || p.turn?.id) !== turnId || (p.turn?.id && p.turn.id !== turnId)) return;
+      if (event.method === 'thread/tokenUsage/updated') reportUsage({contextUsage: codexContext(p.tokenUsage)});
       options.onActivity?.();
       if (event.method === 'item/completed' && item.type === 'agentMessage') { output = item.text || output; onOutput(output); }
       if (event.method === 'item/agentMessage/delta') onEvent({kind: 'writing', label: 'Composing response', status: 'running'});
@@ -214,6 +220,7 @@ export async function runAssistant(options) {
       threadId = thread.thread.id;
       if (!threadId || (sessionId && threadId !== sessionId)) throw new Error('Codex returned a different native conversation.');
       await onSession(threadId);
+      await readLimits();
       const syncTitle = async () => { if (options.conversationTitle) {
         try { await rpc.request('thread/name/set', {threadId, name: options.conversationTitle}, 2000); }
         catch { onEvent({kind: 'connection', label: 'Provider title could not be updated; the Axiovela title is saved', status: 'complete'}); }
@@ -235,6 +242,7 @@ export async function runAssistant(options) {
       for (const event of pendingEvents.splice(0)) handleEvent(event);
     }
     const text = await done;
+    await readLimits();
     if (options.conversationId && !signal.aborted) await cleanupCodexSidebar(rpc, {threadId, signal});
     return text;
   } finally { settled = true; signal.removeEventListener('abort', abort); await rpc.close(); }

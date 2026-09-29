@@ -1,3 +1,4 @@
+import FigureActions, {RemovedFigures} from './FigureActions.jsx';
 import {navigateItems} from './item-navigation.mjs';
 import FigureFeedbackButton from './FigureFeedbackButton.jsx';
 import React, {useEffect, useRef, useState} from 'react';
@@ -7,7 +8,7 @@ import RichText from './ResearchText.jsx';
 import {figureTitle} from './research-model.mjs';
 import {organizeFigures} from './figure-organization.mjs';
 
-export function FigureViewer({figures, initialIndex, url, close}) {
+export function FigureViewer({figures, initialIndex, url, close, onActions}) {
   const dialog = useRef(null);
   const stage = useRef(null);
   const [index, setIndex] = useState(initialIndex);
@@ -39,13 +40,17 @@ export function FigureViewer({figures, initialIndex, url, close}) {
   return createPortal(<dialog ref={dialog} className="figureViewer" aria-labelledby="figure-viewer-title" onCancel={event => { event.preventDefault(); if (event.target.querySelector(".annotationPopover")) { window.dispatchEvent(new Event("axiovela-dismiss-feedback")); return; } close(); }} onKeyDown={keyDown}>
     <header><div><small>FIGURE {index + 1} OF {figures.length}</small><h2 id="figure-viewer-title"><RichText inline text={figureTitle(figure)}/></h2></div><button onClick={() => { window.dispatchEvent(new Event("axiovela-dismiss-feedback")); close(); }} aria-label="Close figure viewer"><X/></button></header>
     <div className="viewerTools"><button onClick={() => change(-1)} disabled={figures.length < 2} aria-label="Previous figure"><ChevronLeft/></button><button onClick={() => change(1)} disabled={figures.length < 2} aria-label="Next figure"><ChevronRight/></button><span className="viewerDivider"/><button onClick={() => setZoom(z => Math.max(.5, z - .25))} disabled={zoom <= .5} aria-label="Zoom out"><ZoomOut/></button><button onClick={() => setZoom(1)}>Fit</button><button onClick={() => setZoom(z => Math.min(4, z + .25))} disabled={zoom >= 4} aria-label="Zoom in"><ZoomIn/></button><output>{Math.round(zoom * 100)}%</output><a href={url(figure)} download={figure.name} aria-label="Download original figure"><Download size={18}/> Original</a></div>
-    <div className="viewerStage" ref={stage} tabIndex={0} aria-label="Figure canvas, scroll to pan when zoomed"><div className="viewerCanvas" data-image-feedback="true"><div className="viewerImageFrame">{error ? <p role="alert">{error}</p> : <img key={figure.path} src={figureUrl} alt={figure.caption || figureTitle(figure)} style={{width: Math.max(1, natural[0] * fit * zoom), height: Math.max(1, natural[1] * fit * zoom)}} onLoad={event => setNatural([event.currentTarget.naturalWidth, event.currentTarget.naturalHeight])} onError={() => setError('This figure could not be loaded. It may have moved; refresh the project and try again.')}/>}<FigureFeedbackButton figure={figure} revision={figureUrl}/></div></div></div>
+    <div className="viewerStage" ref={stage} tabIndex={0} aria-label="Figure canvas, scroll to pan when zoomed"><div className="viewerCanvas" data-image-feedback="true"><div className="viewerImageFrame" onContextMenu={e => {e.preventDefault(); onActions?.(figure);}}><button className="figureMore" aria-label="Figure actions" onClick={()=>onActions?.(figure)}>⋯</button>{error ? <p role="alert">{error}</p> : <img key={figure.path} src={figureUrl} alt={figure.caption || figureTitle(figure)} style={{width: Math.max(1, natural[0] * fit * zoom), height: Math.max(1, natural[1] * fit * zoom)}} onLoad={event => setNatural([event.currentTarget.naturalWidth, event.currentTarget.naturalHeight])} onError={() => setError('This figure could not be loaded. It may have moved; refresh the project and try again.')}/>}<FigureFeedbackButton figure={figure} revision={figureUrl}/></div></div></div>
     <footer><RichText text={figure.caption || 'No caption recorded.'}/>{figure.interpretation && <div><b>Interpretation: </b><RichText text={figure.interpretation}/></div>}<small>← → browse · + / − zoom · scroll to pan · Esc close</small></footer>
     <div className="viewerFilmstrip" aria-label="Browse figures">{figures.map((item, i) => <button key={item.path} onClick={() => setIndex(i)} aria-label={`View ${figureTitle(item)}`} aria-current={i === index ? 'true' : undefined}><img src={url(item)} alt=""/><span><RichText inline text={figureTitle(item)}/></span></button>)}</div>
   </dialog>, document.body);
 }
 
 export default function FigureGallery({artifacts = [], runs = [], apiBase = '', projectRoot = '', insertArtifact}) {
+  const [action, setAction] = useState(null);
+  const [hidden, setHidden] = useState([]);
+  useEffect(()=>{setHidden([]);setAction(null);setViewer(null);},[projectRoot]);
+  artifacts = artifacts.filter(item=>!hidden.includes(item.path));
   const [viewer, setViewer] = useState(null);
   const [selection, setSelection] = useState('');
   const [focusedFigure, setFocusedFigure] = useState('');
@@ -59,7 +64,7 @@ export default function FigureGallery({artifacts = [], runs = [], apiBase = '', 
   // metadata. An edited file may move to the top of the live gallery.
   const currentArtifacts = new Map(artifacts.map(item => [item.path, item]));
   const viewerFigures = viewer?.figures.map(item => currentArtifacts.get(item.path) || item);
-  if (!artifacts.length && !runs.length) return <div className="emptyResearch"><FileText size={18}/><p>No figures yet.</p></div>;
+  if (!projectRoot && !artifacts.length && !runs.length) return <div className="emptyResearch"><FileText size={18}/><p>No figures yet.</p></div>;
   return <div className="figureGalleryPanel"><div className="galleryTools">
     <label className="figureFilter">Figures from<select aria-label="Figures from" value={active} onChange={event => { setSelection(event.target.value); setViewer(null); }}>
       <option value="">All experiments</option>
@@ -67,8 +72,8 @@ export default function FigureGallery({artifacts = [], runs = [], apiBase = '', 
       {unlinked && <option value="unlinked">No run linked</option>}
     </select></label><span aria-live="polite">{figures.length} figure{figures.length === 1 ? '' : 's'}</span>
     </div>{!sections.length && <div className="emptyResearch"><p>No figures yet for {options.find(group => group.id === active)?.label || (active ? 'this trial' : 'these experiments')}. Names are available while work is running; figures appear when saved.</p></div>}<div className="figureSections" onKeyDown={event => navigateItems(event, '[data-figure-item]', {axis: 'both'})}>{sections.map(section => <section className="figureTopic" key={section.title}>
-      <h3>{section.title}</h3><div className="figureGrid">{section.entries.map(({artifact, runLabel, ids}) => artifact.type === 'pdf' ? <a {...navigation(artifact)} className="documentCard" key={artifact.path} href={url(artifact)} target="_blank" rel="noreferrer"><FileText/><div><b><RichText inline text={figureTitle(artifact)}/></b><small className="figureRunLabel" title={ids.join(', ')}>{runLabel}</small></div><span>Open PDF</span></a> : <figure key={artifact.path} draggable onDragStart={event => { event.dataTransfer.setData('application/x-workbench-artifact', JSON.stringify(artifact)); event.dataTransfer.setData('text/plain', artifact.path); }}>
-        <div className="figureImageFrame" data-image-feedback="true"><button {...navigation(artifact)} className="figureImage" onClick={() => setViewer({figures, index: figures.findIndex(item => item.path === artifact.path)})} aria-label={`Enlarge ${figureTitle(artifact)}`}><img loading="lazy" src={url(artifact)} alt={figureTitle(artifact)}/><span><Expand size={14}/> Enlarge</span></button><FigureFeedbackButton figure={artifact} revision={url(artifact)}/></div><figcaption><b><RichText inline text={figureTitle(artifact)}/></b><small className="figureRunLabel" title={ids.join(', ')}>{runLabel}</small>{artifact.caption && <RichText text={artifact.caption}/>}{insertArtifact && <button className="textButton" onClick={() => insertArtifact(artifact)}>Insert into write-up</button>}</figcaption>
+      <h3>{section.title}</h3><div className="figureGrid">{section.entries.map(({artifact, runLabel, ids}) => artifact.type === 'pdf' ? <a {...navigation(artifact)} className="documentCard" key={artifact.path} href={url(artifact)} target="_blank" rel="noreferrer"><FileText/><div><b><RichText inline text={figureTitle(artifact)}/></b><small className="figureRunLabel" title={ids.join(', ')}>{runLabel}</small></div><span>Open PDF</span></a> : <figure key={artifact.path} onContextMenu={e=>{e.preventDefault();setAction(artifact);}} onKeyDown={e=>{if(e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")){e.preventDefault();setAction(artifact);}}} draggable onDragStart={event => { event.dataTransfer.setData('application/x-workbench-artifact', JSON.stringify(artifact)); event.dataTransfer.setData('text/plain', artifact.path); }}>
+        <div className="figureImageFrame" data-image-feedback="true"><button className="figureMore" aria-label={`Actions for ${figureTitle(artifact)}`} onClick={()=>setAction(artifact)}>⋯</button><button {...navigation(artifact)} className="figureImage" onClick={() => setViewer({figures, index: figures.findIndex(item => item.path === artifact.path)})} aria-label={`Enlarge ${figureTitle(artifact)}`}><img loading="lazy" src={url(artifact)} alt={figureTitle(artifact)}/><span><Expand size={14}/> Enlarge</span></button><FigureFeedbackButton figure={artifact} revision={url(artifact)}/></div><figcaption><b><RichText inline text={figureTitle(artifact)}/></b><small className="figureRunLabel" title={ids.join(', ')}>{runLabel}</small>{artifact.caption && <RichText text={artifact.caption}/>}{insertArtifact && <button className="textButton" onClick={() => insertArtifact(artifact)}>Insert into write-up</button>}</figcaption>
       </figure>)}</div>
-    </section>)}</div>{viewer && <FigureViewer figures={viewerFigures} initialIndex={viewer.index} url={url} close={() => setViewer(null)}/>}</div>;
+    </section>)}</div><RemovedFigures key={projectRoot} projectRoot={projectRoot} onRestore={()=>setHidden([])}/>{action && <FigureActions key={projectRoot+action.path} figure={action} projectRoot={projectRoot} close={()=>setAction(null)} onRemoved={name=>{setViewer(null);if(name)setHidden(x=>[...x,name]);else setHidden([]);}}/>}{viewer && <FigureViewer onActions={setAction} figures={viewerFigures} initialIndex={viewer.index} url={url} close={() => setViewer(null)}/>}</div>;
 }

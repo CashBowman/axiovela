@@ -20,7 +20,9 @@ try {
   await assert.rejects(validateSelection({...selection, effort: 'ultra'}, cwd), /not supported/);
   await assert.rejects(validateSelection({...selection, modelId: 'missing'}, cwd), /no longer/);
   await assert.rejects(validateSelection({...selection, adapterId: 'not-a-provider'}, cwd), /supported/);
-  const first = JSON.parse(await run({conversationTitle: 'Information dimension in ML'}));
+  let usage;
+  const first = JSON.parse(await run({onUsage: value => {usage = value;}, conversationTitle: 'Information dimension in ML'}));
+  assert.equal(usage.contextUsage.percent,20); assert.equal(usage.limits[0].remaining,65);
   assert.equal(first.name, 'Information dimension in ML');
   assert.equal(first.effort, 'high'); assert.equal(first.turnEffort, 'high'); assert.equal(first.sandbox, 'read-only'); assert.equal(first.approvalPolicy, 'never'); assert.equal(first.approvalsReviewer, 'user');
   const second = JSON.parse(await run({selection: {...selection, modelId: 'second-model', effort: ''}, mode: 'auto'}));

@@ -215,7 +215,7 @@ async function runPi({selection, cwd, mode, prompt, sessionId, signal, onSession
     const result = await done;
     if (onUsage) {
       const stats = await rpc.request('get_session_stats').catch(() => null);
-      if (stats) await onUsage(publicPiUsage(stats, startingStats || {}));
+      if (stats) await onUsage({...publicPiUsage(stats, startingStats || {}), measuredAt: new Date().toISOString()});
     }
     return result;
   } finally { clearTimeout(completionTimer); signal.removeEventListener('abort', abort); await rpc.close(); }

@@ -1,3 +1,4 @@
+import {previewFigureRemoval, removeFigure, removedFigures, restoreFigure} from './figure-actions.mjs';
 import {createProjectCatalog} from './project-catalog.mjs';
 import {selectedLibraryContext, configureLibraryGate, importAssistantReferences, scheduleLibrarySync, libraryInstructions, libraryState, importLibrary, updateLibrary, syncLibrary, libraryPdf, libraryImage, libraryGraph} from './library.mjs';
 import {listAnnotations, saveAnnotation, prepareAnnotations, annotationDocument, revisionHash} from './annotations.mjs';
@@ -1316,6 +1317,13 @@ async function handleProjectRequest(req, res) {
     if (req.method === 'GET' && url.pathname === '/api/infrastructure') return json(res, 200, await readInfrastructure());
     if (req.method === 'PUT' && url.pathname === '/api/infrastructure') return json(res, 200, await saveInfrastructure(await parseBody(req)));
     if (req.method === 'GET' && url.pathname === '/api/artifacts') return json(res, 200, {artifacts: await listProjectArtifacts()});
+    if (req.method === 'GET' && url.pathname === '/api/figures/removed') return json(res, 200, {figures: await removedFigures(projectState.root)});
+    if (req.method === 'POST' && ['/api/figures/preview-removal', '/api/figures/remove', '/api/figures/restore'].includes(url.pathname)) {
+      const body = await parseBody(req);
+      if (url.pathname.endsWith('/preview-removal')) return json(res, 200, await previewFigureRemoval(projectState.root, body.path));
+      if ([...jobs.values(), ...assistantJobs.values()].some(job => job.projectRoot === projectState.root && (job.status === 'running' || job.controller))) throw Object.assign(new Error('Wait for active project tasks to finish before removing or restoring a figure.'), {status: 409});
+      return json(res, 200, await (url.pathname.endsWith('/restore') ? restoreFigure : removeFigure)(projectState.root, body));
+    }
     if (req.method === 'POST' && url.pathname === '/api/artifacts/upload') return json(res, 201, await uploadFigure(await parseBody(req)));
     if (req.method === 'GET' && url.pathname === '/api/artifacts/file') return await artifactResponse(req, res, url.searchParams.get('path') || '');
     if (req.method === 'GET' && url.pathname === '/api/commands') return json(res, 200, {commands: Object.values(commandManifest).map(command => publicCommand(command))});
