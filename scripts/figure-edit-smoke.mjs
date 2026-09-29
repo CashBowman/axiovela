@@ -91,9 +91,12 @@ try {
   await page.waitForFunction(()=>document.querySelector('.usageMeterButton')?.textContent.includes('20%')).catch(async e=>{console.error(await page.locator('.cleanChat').innerText());throw e;});
   await page.getByRole('button',{name:'Context and usage',exact:true}).click();
   await page.getByText('65% left',{exact:true}).waitFor();
+  await page.screenshot({path:'/tmp/axiovela-usage-popover.png'});
   await page.keyboard.press('Escape');
   await revisedCard.click({button:'right'});
   await page.getByRole('menuitem',{name:'Remove figure…',exact:true}).click();
+  await page.getByRole('button',{name:'Remove figure',exact:true}).waitFor();
+  await page.screenshot({path:'/tmp/axiovela-removal-preview.png'});
   await page.getByRole('button',{name:'Remove figure',exact:true}).click();
   await page.getByRole('button',{name:'Undo removal',exact:true}).waitFor();
   await assert.rejects(readFile(file),{code:'ENOENT'});
