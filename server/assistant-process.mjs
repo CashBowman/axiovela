@@ -6,17 +6,27 @@ export function commandFor(id) {
   return process.env[`WORKBENCH_${id.toUpperCase()}_PATH`] || `${id}${process.platform === 'win32' ? '.cmd' : ''}`;
 }
 export function spawnAssistant(id, args, {cwd, env = process.env} = {}) {
-  let command = commandFor(id);
-  if (/\.(mjs|cjs|js)$/.test(command)) { args = [command, ...args]; command = process.execPath; }
-  else if (process.platform === 'win32' && command.endsWith('.cmd')) {
-    const entry = {gemini: '@google/gemini-cli/dist/index.js', claude: '@anthropic-ai/claude-code/cli.js', pi: '@earendil-works/pi-coding-agent/dist/cli.js', opencode: 'opencode-ai/bin/opencode'}[id];
-    const dirs = path.isAbsolute(command) ? [path.dirname(command)] : (env.PATH || env.Path || '').split(path.delimiter);
-    const entries = id === 'pi' ? [entry, '@mariozechner/pi-coding-agent/dist/cli.js'] : [entry];
-    const found = dirs.flatMap(dir => entries.filter(Boolean).map(item => path.join(dir, 'node_modules', item))).find(file => existsSync(file));
+  const [command, argv] = assistantExecutable(id, commandFor(id), args, {env});
+  return spawn(command, argv, {cwd, env, detached: process.platform !== 'win32', stdio: ['pipe', 'pipe', 'pipe']});
+}
+// Keep prompts in argv/stdin, never interpolate them into cmd.exe or a shell.
+export function assistantExecutable(id, command, args, {env = process.env, platform = process.platform, exists = existsSync} = {}) {
+  if (/\.(mjs|cjs|js)$/i.test(command)) return [process.execPath, [command, ...args]];
+  if (platform === 'win32' && /\.cmd$/i.test(command)) {
+    const paths = path.win32;
+    const entries = {
+      codex: ['@openai/codex/bin/codex.js'],
+      gemini: ['@google/gemini-cli/bundle/gemini.js', '@google/gemini-cli/dist/index.js'],
+      claude: ['@anthropic-ai/claude-code/bin/claude.exe', '@anthropic-ai/claude-code/cli.js'],
+      pi: ['@earendil-works/pi-coding-agent/dist/bundle/cli.js', '@earendil-works/pi-coding-agent/dist/cli.js', '@mariozechner/pi-coding-agent/dist/cli.js'],
+      opencode: ['opencode-ai/bin/opencode'],
+    }[id] || [];
+    const dirs = paths.isAbsolute(command) ? [paths.dirname(command)] : (env.PATH || env.Path || '').split(paths.delimiter);
+    const found = dirs.flatMap(dir => entries.filter(Boolean).map(item => paths.join(dir, 'node_modules', item))).find(file => exists(file));
     if (!found) throw new Error(`Set WORKBENCH_${id.toUpperCase()}_PATH to the native executable or JavaScript entry point on Windows.`);
-    command = process.execPath; args = [found, ...args];
+    return /\.exe$/i.test(found) ? [found, args] : [process.execPath, [found, ...args]];
   }
-  return spawn(command, args, {cwd, env, detached: process.platform !== 'win32', stdio: ['pipe', 'pipe', 'pipe']});
+  return [command, args];
 }
 export function stopProcess(child) {
   if (child.exitCode !== null || child.signalCode !== null || !child.pid) return;

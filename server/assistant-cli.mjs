@@ -4,10 +4,10 @@ import {RpcProcess} from './assistant-runtime.mjs';
 import {randomUUID} from 'node:crypto';
 
 export const cliProviders = {
-  claude: {name: 'Claude Code', modes: ['ask', 'auto', 'full'], setup: 'Install Claude Code and run claude once in a terminal to sign in.'},
-  gemini: {name: 'Gemini CLI', modes: ['ask', 'auto', 'full'], setup: 'Install Gemini CLI and run gemini once to sign in. Auto-approve requires Gemini sandbox support.'},
-  opencode: {name: 'OpenCode', modes: ['full'], setup: 'Install OpenCode and connect providers with opencode auth login. This adapter requires Full access.'},
-  pi: {name: 'Pi', modes: ['ask', 'full'], setup: 'Install Pi and configure providers with pi. Auto-approve is unavailable because this adapter has no project sandbox.'},
+  claude: {name: 'Claude Code', modes: ['ask', 'auto', 'full'], setup: 'Install Claude Code and run claude once in a terminal to sign in.', permissionHint: 'Read-only exposes Read, Glob and Grep. Project editing uses Claude auto permission review, not a project filesystem sandbox; availability depends on the CLI, model and account. Full access bypasses permission prompts. Local CLI configuration still applies.'},
+  gemini: {name: 'Gemini CLI', modes: ['ask', 'auto', 'full'], setup: 'Install Gemini CLI and run gemini once to sign in. Project editing requires Gemini sandbox support.', permissionHint: 'Read-only uses Gemini plan mode, which requires a compatible CLI and planning configuration. Project editing requests a sandbox with automatic approval. Full access uses YOLO approval; local Gemini sandbox and policy settings still apply.'},
+  opencode: {name: 'OpenCode', modes: ['full'], setup: 'Install OpenCode and connect providers with opencode auth login. This adapter requires Full access.', permissionHint: 'Full access auto-approves tools unless OpenCode policy explicitly denies them. This adapter does not provide a project filesystem sandbox.'},
+  pi: {name: 'Pi', modes: ['ask', 'full'], setup: 'Install Pi and configure providers with pi. Project editing is unavailable because this adapter has no project sandbox.', permissionHint: 'Read-only exposes read, grep, find and ls; these tools are not confined to the project directory. Full access also permits shell commands and file changes without an OS sandbox. Extensions are disabled.'},
 };
 const modelEntry = (id, name, provider, efforts = []) => ({id, name, provider, efforts, defaultEffort: ''});
 function piConnect(cwd, mode = 'ask', sessionId, env, profile) {
@@ -46,6 +46,7 @@ export async function discoverCli(id, cwd) {
 export async function runCli(options, model) {
   const {selection, cwd, mode, prompt, sessionId, signal, onSession, onEffective, onOutput, onEvent, env} = options;
   const id = selection.adapterId;
+  if (!Object.hasOwn(cliProviders, id) || !cliProviders[id].modes.includes(mode)) throw new Error('Unsupported CLI access mode.');
   if (id === 'pi') return runPi(options, model);
   let args;
   if (id === 'claude') args = ['-p', '--output-format', 'stream-json', '--verbose', '--permission-mode', mode === 'full' ? 'bypassPermissions' : mode === 'auto' ? 'auto' : 'dontAsk', ...(mode === 'ask' ? ['--tools', 'Read,Glob,Grep', '--disallowedTools', 'mcp__*'] : []), ...(selection.effort ? ['--effort', selection.effort] : [])];
@@ -63,7 +64,10 @@ export async function runCli(options, model) {
     if (id === 'claude' && e.type === 'assistant') output = (e.message?.content || []).filter(p => p.type === 'text').map(p => p.text).join('\n');
     if (id === 'gemini' && e.type === 'message' && e.role === 'assistant') output = e.delta ? output + (e.content || '') : (e.content || output);
     if (id === 'opencode' && e.type === 'text') output += e.part?.text || '';
-    if (e.type === 'result') { terminal = true; failed ||= Boolean(e.is_error || e.status === 'error' || e.error); output = e.result || output; }
+    if (e.type === 'result') {
+      terminal = true; failed ||= Boolean(e.is_error || e.status === 'error' || e.error); output = e.result || output;
+      if (id === 'claude' && e.permission_denials?.length) onEvent({kind: 'permission', label: 'Claude denied one or more tool requests under the selected access policy. The reply may describe unfinished work.', status: 'complete'});
+    }
     if (id === 'opencode' && e.type === 'step_finish') terminal = true;
     if (e.type === 'error' && e.severity !== 'warning') failed = true;
     if (['tool_use', 'tool_result', 'tool'].includes(e.type) || e.message?.content?.some(p => p.type === 'tool_use')) onEvent({kind: 'tool', label: 'Working with project tools', status: 'running'});

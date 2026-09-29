@@ -61,6 +61,7 @@ export default function ConnectionSetup({id, includeHerdr = false, onUseApi}) {
     <SetupCommand>{`${npm} install -g ${guide.package}`}</SetupCommand>
     <h3>2. Sign in</h3><SetupCommand>{platform === 'windows' && ['pi', 'gemini', 'opencode'].includes(id) ? guide.login.replace(id, `${id}.cmd`) : guide.login}</SetupCommand>
     <p>{guide.hint} Your provider’s account access and charges apply. An API key saved in Axiovela does not sign you into a separate CLI.</p>
+    <p>CLI sign-in may use a subscription or separately billed API credentials, including credentials supplied by your environment. Axiovela does not verify your subscription, remaining quota or model entitlement. Confirm the active billing method in the provider’s CLI before sending paid requests.</p>
     <p><a href={guide.url} target="_blank" rel="noreferrer">Official {guide.name} setup guide</a></p>
     <InstalledToolHelp id={id} name={guide.name} platform={platform}/>
     {includeHerdr && <><h3>3. Add Herdr for Agentic mode</h3><p>Herdr coordinates Pi workers. Axiovela starts it when you enable Agentic mode.</p>

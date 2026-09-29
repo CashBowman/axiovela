@@ -138,6 +138,15 @@ try {
   assert.equal(await connectionDialog.getByLabel('API key', {exact: true}).getAttribute('type'), 'password');
   assert.equal(await connectionDialog.getByLabel('API key', {exact: true}).inputValue(), '');
   await connectionDialog.getByRole('button', {name: 'Close model picker', exact: true}).click();
+  await page.getByRole('button', {name: 'Choose experiment model and provider'}).click();
+  for (const [cli, api] of [['claude', 'anthropic-api'], ['gemini', 'gemini-api']]) {
+    await connectionDialog.getByRole('combobox', {name: 'Connection', exact: true}).selectOption(cli);
+    const details = connectionDialog.locator('details').filter({has: connectionDialog.getByRole('button', {name: 'Connect an API key instead', exact: true})});
+    if (await details.count() && (await details.getAttribute('open')) === null) await details.locator('summary').click();
+    await connectionDialog.getByRole('button', {name: 'Connect an API key instead', exact: true}).click();
+    assert.equal(await connectionDialog.getByRole('combobox', {name: 'Connection', exact: true}).inputValue(), api);
+  }
+  await connectionDialog.getByRole('button', {name: 'Close model picker', exact: true}).click();
   console.log('Desktop smoke: single-instance launch passed; creating example');
   // Exercise the actual native-picker IPC and account-free example with an
   // isolated destination. Only the OS dialog is replaced, not project creation.

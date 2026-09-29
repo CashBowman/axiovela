@@ -16,6 +16,7 @@ module.exports = {
     ignore: file => {
       const relative = file.replaceAll('\\', '/').replace(/^\//, '');
       if (relative === 'node_modules/.bin' || relative.startsWith('node_modules/.bin/')) return true;
+      if (relative !== 'project-template/.gitignore' && !relative.startsWith('node_modules/') && relative.split('/').some(part => part.startsWith('.') || /^(?:reports|workspaces|keys|secrets|providers\.json|credentials\.json|auth\.json)$/i.test(part))) return true;
       if (relative === 'src' || relative === 'src/markdown-format.mjs') return false;
       return Boolean(relative) && !included.has(relative.split('/')[0]);
     },

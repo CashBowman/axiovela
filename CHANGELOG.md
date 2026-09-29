@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.13 — 2026-09-29
+
+- Preserve all concurrent provider credential saves and invalidate stale model discovery after settings changes.
+- Route Claude and Gemini API shortcuts correctly; clarify CLI subscription, billing and permission limits.
+- Resolve current and legacy Windows CLI launchers without a shell.
+- Reject invalid access modes and malformed tool arguments, hide unavailable shell tools, and handle incomplete compatible-API responses safely.
+- Allow explicitly selected compatible models when the server has no model-list endpoint; retain authentication and rate-limit errors.
+- Exclude nested credentials and private development files from installer payloads.
+- Built locally without GitHub build jobs. Windows unsigned; Mac freshly ad-hoc signed without notarization. Native acceptance of these rebuilt Windows/Mac packages remains pending.
+- Preserve the entire current API request instead of silently truncating it.
+
+
 ## 0.2.11
 
 - Double-click a compiled LaTeX PDF to focus and select the corresponding raw source line using SyncTeX mappings.

@@ -12,6 +12,9 @@ export const apiProviders = {
 
 let privateStorage = null;
 export function useProviderStorage(storage) { privateStorage = storage; }
+let settingsWrites = Promise.resolve();
+let settingsRevision = 0;
+export const providerSettingsRevision = () => settingsRevision;
 
 function settingsPath() {
   if (process.env.WORKBENCH_PROVIDER_SETTINGS_PATH) return path.resolve(process.env.WORKBENCH_PROVIDER_SETTINGS_PATH);
@@ -35,10 +38,17 @@ export function validateEndpoint(value) {
   if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) throw new Error('Use HTTPS, or HTTP on loopback for a local model server.');
   return url.href.replace(/\/$/, '');
 }
-export async function saveProvider(id, body) {
+export function saveProvider(id, body) {
+  // Serialize the entire read/modify/write transaction, including desktop IPC.
+  const result = settingsWrites.then(() => writeProvider(id, body));
+  settingsWrites = result.catch(() => {});
+  return result;
+}
+async function writeProvider(id, body) {
   if (!Object.hasOwn(apiProviders, id)) throw new Error('Unknown API provider.');
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Invalid provider settings.');
   const settings = await readSettings();
-  const old = settings[id] || {};
+  const old = {...settings[id]};
   if (body.clearKey) delete old.key;
   if (!body.clearKey && body.apiKey !== undefined && body.apiKey !== '') {
     if (typeof body.apiKey !== 'string' || body.apiKey.length > 4096 || /[\r\n]/.test(body.apiKey)) throw new Error('Invalid API key.');
@@ -46,12 +56,13 @@ export async function saveProvider(id, body) {
   }
   if (id === 'compatible-api' && body.endpoint !== undefined) old.endpoint = validateEndpoint(body.endpoint);
   settings[id] = old;
-  if (privateStorage) { await privateStorage.write(settings); return {saved: true}; }
+  if (privateStorage) { await privateStorage.write(settings); settingsRevision++; return {saved: true}; }
   const file = settingsPath();
   await mkdir(path.dirname(file), {recursive: true, mode: 0o700});
   const temporary = `${file}.${randomUUID()}.tmp`;
   await writeFile(temporary, JSON.stringify(settings), {mode: 0o600, flag: 'wx'});
   await rename(temporary, file); await chmod(file, 0o600);
+  settingsRevision++;
   return {saved: true}; // Never echo credentials, including partially masked keys.
 }
 
@@ -61,7 +72,10 @@ export async function providerRequest(provider, route, {body, signal} = {}) {
   else if (provider.wire === 'gemini') headers['x-goog-api-key'] = provider.key;
   else if (provider.key) headers.authorization = `Bearer ${provider.key}`;
   const response = await fetch(`${provider.endpoint}/${route}`, {method: body ? 'POST' : 'GET', headers, ...(body ? {body: JSON.stringify(body)} : {}), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(120000)]) : AbortSignal.timeout(15000), redirect: 'error'});
-  if (!response.ok) throw new Error(`${provider.name} returned HTTP ${response.status}. Check authentication, model access, quota, and request settings.`);
+  if (!response.ok) {
+    await response.body?.cancel();
+    throw Object.assign(new Error(`${provider.name} returned HTTP ${response.status}. Check authentication, model access, quota, and request settings.`), {providerStatus: response.status});
+  }
   const reader = response.body?.getReader();
   if (!reader) throw new Error('Provider returned an empty response.');
   const chunks = []; let size = 0;

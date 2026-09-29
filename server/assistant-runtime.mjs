@@ -1,28 +1,11 @@
 import {profileId} from './research-profiles.mjs';
 import {spawn} from 'node:child_process';
 import {EventEmitter} from 'node:events';
-import {existsSync} from 'node:fs';
-import path from 'node:path';
 import {cliProviders, discoverCli, runCli} from './assistant-cli.mjs';
-import {apiProviders} from './provider-settings.mjs';
+import {apiProviders, providerSettingsRevision} from './provider-settings.mjs';
 import {discoverApi, runApi} from './assistant-api.mjs';
-import {commandFor, stopProcess} from './assistant-process.mjs';
+import {commandFor, stopProcess, assistantExecutable} from './assistant-process.mjs';
 export const connectionIds = ['codex', ...Object.keys(cliProviders), ...Object.keys(apiProviders)];
-
-// Invoke Node-based Windows shims without a shell (prompts never become shell text).
-function executable(command, args, env = process.env) {
-  if (/\.(?:mjs|cjs|js)$/i.test(command)) return [process.execPath, [command, ...args]];
-  if (process.platform === 'win32' && /\.cmd$/i.test(command)) {
-    const locations = path.isAbsolute(command) ? [path.dirname(command)] : (env.PATH || env.Path || '').split(path.delimiter);
-    const entries = ['@openai/codex/bin/codex.js', '@mariozechner/pi-coding-agent/dist/cli.js', '@earendil-works/pi-coding-agent/dist/cli.js'].filter(entry => path.basename(command).startsWith('codex') ? entry.includes('/codex/') : entry.includes('/pi-coding-agent/'));
-    for (const dir of locations) for (const entry of entries) {
-      const candidate = path.join(dir, 'node_modules', entry);
-      if (existsSync(candidate)) return [process.execPath, [candidate, ...args]];
-    }
-    throw new Error('Set the runtime path to its JavaScript entry point or native executable on Windows.');
-  }
-  return [command, args];
-}
 
 export class RpcProcess extends EventEmitter {
   constructor(command, args, {cwd, env = process.env, protocol = 'codex'} = {}) {
@@ -31,7 +14,7 @@ export class RpcProcess extends EventEmitter {
     this.protocol = protocol;
     this.sequence = 0;
     this.buffer = '';
-    const [file, argv] = executable(command, args, env);
+    const [file, argv] = assistantExecutable(protocol === 'pi' ? 'pi' : 'codex', command, args, {env});
     this.child = spawn(file, argv, {cwd, env, detached: process.platform !== 'win32', stdio: ['pipe', 'pipe', 'pipe']});
     this.closePromise = new Promise(resolve => this.child.once('close', resolve));
     this.child.stderr.on('data', () => {}); // Provider diagnostics may contain private context.
@@ -118,9 +101,10 @@ export async function cleanupCodexSidebar(rpc, {threadId, signal}) {
 export async function discoverRuntime(id, cwd, refresh = false) {
   if (apiProviders[id] || cliProviders[id]) {
     const key = `${id}:${cwd}:${apiProviders[id] ? 'api' : commandFor(id)}`;
-    if (!refresh && cache.get(key)?.expires > Date.now()) return cache.get(key).value;
+    const revision = apiProviders[id] ? providerSettingsRevision() : 0;
+    if (!refresh && cache.get(key)?.revision === revision && cache.get(key)?.expires > Date.now()) return cache.get(key).value;
     const value = apiProviders[id] ? await discoverApi(id) : await discoverCli(id, cwd);
-    cache.set(key, {expires: Date.now() + 60000, value});
+    cache.set(key, {expires: Date.now() + 60000, revision, value});
     return value;
   }
   const key = `${id}:${runtimeCommand(id)}:${cwd}`;
@@ -140,7 +124,7 @@ export async function discoverRuntime(id, cwd, refresh = false) {
       defaultModelId = config.config?.model || models.find(m => m.isDefault)?.id || '';
       defaultEffort = config.config?.model_reasoning_effort || models.find(m => m.id === defaultModelId)?.defaultEffort || '';
     }
-    const value = {id, type: 'cli', name: 'Codex', available: true, models, defaultModelId, defaultEffort, modes: ['ask', 'auto', 'full'], catalogStatus: 'runtime-reported', fetchedAt: new Date().toISOString()};
+    const value = {id, type: 'cli', name: 'Codex', available: true, models, defaultModelId, defaultEffort, modes: ['ask', 'auto', 'full'], permissionHint: 'Read-only uses the Codex read-only sandbox. Project editing starts with workspace-write and automatic approval review; approved requests may expand access. Full access disables the sandbox and approval prompts. Codex policy may impose further restrictions.', catalogStatus: 'runtime-reported', fetchedAt: new Date().toISOString()};
     cache.set(key, {expires: Date.now() + 60000, value}); return value;
   } catch (error) {
     return {id, type: 'cli', name: 'Codex', available: false, models: [], modes: [], setup: 'Install Codex and run codex once in a terminal to sign in, then refresh connections.', error: error.message};
