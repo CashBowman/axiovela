@@ -33,6 +33,8 @@ try {
   assert.deepEqual(tables[1].rows, [['n_test', 100]]);
   assert.equal(typeof metrics.logistic, 'string', 'display parsing must not mutate research records');
   assert.deepEqual(metricData('{"auc":0.9}'), {auc: .9});
+  assert.deepEqual(metricData(' \n [1, 2]'), [1, 2]);
+  for (const label of ['accepted', 'file.csv', '42', 'true', 'null', '"quoted"', '']) assert.equal(metricData(label), label, 'ordinary metric text remains literal');
   assert.deepEqual(metricData("{'score': -1.2e-3, 'valid': True, 'other': None,}"), {score: -.0012, valid: true, other: null});
   const hostileMetric = "{'score': __import__('os').system('echo unsafe')}";
   assert.equal(metricData(hostileMetric), hostileMetric, 'never evaluate legacy dictionary strings');

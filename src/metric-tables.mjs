@@ -1,6 +1,11 @@
 // Interpret data, never execute strings from a run record.
 export function metricData(value) {
   if (typeof value !== 'string' || value.length > 100000) return value;
+  // Ordinary labels are overwhelmingly common in detailed experiment records.
+  // Only objects/arrays can produce a structured metric; avoid a thrown JSON
+  // parse for every label, filename and status on every render.
+  const first = value.trimStart()[0];
+  if (first !== '{' && first !== '[') return value;
   try {
     const parsed = JSON.parse(value);
     if (parsed && typeof parsed === 'object') return parsed;

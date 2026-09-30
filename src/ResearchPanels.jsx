@@ -1,19 +1,58 @@
 import {navigateItems} from './item-navigation.mjs';
 import {AnnotatedContent} from './WorkspaceFeedback.jsx';
-import React from 'react';
+import React, {useMemo, useState} from 'react';
 import RichText from './ResearchText.jsx';
 import {metricLabel, metricTables} from './metric-tables.mjs';
 import FigureGallery from './FigureGallery.jsx';
 import {figureTitle, humanTitle, metricValue, researchView, runTitle} from './research-model.mjs';
 
 function Empty({children}) { return <div className="emptyResearch"><p>{children}</p></div>; }
-function Metrics({metrics, compact = false}) {
-  const tables = metricTables(metrics);
-  if (!tables.length) return compact ? null : <Empty>No metrics recorded yet.</Empty>;
-  const shown = compact ? tables.filter(table => table.comparison).slice(0, 1) : tables;
-  if (!shown.length && compact) shown.push(...tables.slice(0, 1).map(table => ({...table, rows: table.rows.slice(0, 4)})));
-  return <div className={'researchMetrics' + (compact ? ' compactMetrics' : '')}>{shown.map((table, index) => <div className="metricTableScroll" key={index} role="region" aria-label={table.title} tabIndex={0}><table className="metricTable"><caption>{table.title}</caption><thead><tr>{table.columns.map((column, i) => <th key={i} scope="col"><RichText inline text={metricLabel(column)}/></th>)}</tr></thead><tbody>{table.rows.map((row, i) => <tr key={i}>{row.map((value, j) => j === 0 ? <th key={j} scope="row" title={String(value)}><RichText inline text={metricLabel(value)}/></th> : <td key={j} title={value === undefined ? 'Not recorded' : JSON.stringify(value)}>{typeof value === 'string' ? <RichText inline text={value}/> : value === undefined || value === null ? '—' : metricValue(value)}</td>)}</tr>)}</tbody></table></div>)}{!compact && <details><summary>Exact recorded values</summary><pre>{JSON.stringify(metrics, null, 2)}</pre></details>}</div>;
+const metricPageSize = 12;
+const metricRowPageSize = 50;
+function MetricTable({table, compact}) {
+  const [page, setPage] = useState(0);
+  const count = compact ? 4 : metricRowPageSize;
+  const current = Math.min(page, Math.max(0, Math.ceil(table.rows.length / count) - 1));
+  const start = compact ? 0 : current * count;
+  const rows = table.rows.slice(start, start + count);
+  return <div className="metricTableScroll" role="region" aria-label={table.title} tabIndex={0}>
+    <table className="metricTable"><caption>{table.title}</caption>
+      <thead><tr>{table.columns.map((column, i) => <th key={i} scope="col"><RichText inline text={metricLabel(column)}/></th>)}</tr></thead>
+      <tbody>{rows.map((row, i) => <tr key={start + i}>{row.map((value, j) => j === 0
+        ? <th key={j} scope="row" title={String(value)}><RichText inline text={metricLabel(value)}/></th>
+        : <td key={j} title={value === undefined ? 'Not recorded' : JSON.stringify(value)}>{typeof value === 'string' ? <RichText inline text={value}/> : value === undefined || value === null ? '—' : metricValue(value)}</td>)}</tr>)}</tbody>
+    </table>
+    {table.rows.length > count && <div data-feedback-exclude>
+      <small>Rows {start + 1}–{start + rows.length} of {table.rows.length}</small>
+      {!compact && <><button className="textButton" disabled={current === 0} onClick={() => setPage(current - 1)}>Previous rows</button><button className="textButton" disabled={start + count >= table.rows.length} onClick={() => setPage(current + 1)}>Next rows</button></>}
+    </div>}
+  </div>;
 }
+// Detailed metrics can contain tens of thousands of records. Typing in the chat
+// must neither normalize them again nor mount the entire record set as tables.
+export const Metrics = React.memo(function Metrics({metrics, compact = false, status}) {
+  const tables = useMemo(() => metricTables(metrics), [metrics]);
+  const [page, setPage] = useState(0);
+  const [exactOpen, setExactOpen] = useState(false);
+  const exact = useMemo(() => exactOpen ? JSON.stringify(metrics, null, 2) : '', [metrics, exactOpen]);
+  if (!tables.length) return compact
+    ? <p className="pendingMetrics">{status === 'running' || status === 'queued' ? 'Measurements pending.' : 'No metrics recorded.'}</p>
+    : <Empty>No metrics recorded yet.</Empty>;
+  const current = Math.min(page, Math.max(0, Math.ceil(tables.length / metricPageSize) - 1));
+  const start = current * metricPageSize;
+  const shown = compact ? [tables.find(table => table.comparison) || tables[0]] : tables.slice(start, start + metricPageSize);
+  return <div className={'researchMetrics' + (compact ? ' compactMetrics' : '')}>
+    {shown.map((table, index) => <MetricTable key={(compact ? 0 : start) + index} table={table} compact={compact}/>)}
+    {compact ? <small>Rounded display · full metrics and procedure on Methods</small> : <>
+      {tables.length > metricPageSize && <div data-feedback-exclude>
+        <small>Tables {start + 1}–{start + shown.length} of {tables.length}</small>
+        <button className="textButton" disabled={current === 0} onClick={() => setPage(current - 1)}>Previous tables</button>
+        <button className="textButton" disabled={start + metricPageSize >= tables.length} onClick={() => setPage(current + 1)}>Next tables</button>
+      </div>}
+      <details onToggle={event => setExactOpen(event.currentTarget.open)}><summary>Exact recorded values</summary>{exactOpen && <pre>{exact}</pre>}</details>
+    </>}
+  </div>;
+});
 function ExperimentDetails({run}) {
   if (!run) return <Empty>Select a recorded experiment to inspect its procedure.</Empty>;
   const method = run.method && typeof run.method === 'object' && !Array.isArray(run.method) ? run.method : {};
@@ -36,7 +75,7 @@ export function ResearchLeft({Pane, tab, project, selectedRun, selectRun, infras
   if (tab === 'Trials') return <Pane title="Trial ledger"><p className="paneHint trialLedgerHint">{view.runs.length} recorded · Up/Down to select, Home/End to jump</p>{view.runs.length ? <div className="trialLedger" role="group" aria-label="Trial ledger" onKeyDown={event => navigateItems(event, '[data-trial-item]', {activate: true})}>{view.runs.map(run => <button data-trial-item="" tabIndex={run.id === (selectedRun?.id || view.runs[0]?.id) ? 0 : -1} key={run.id} aria-pressed={run.id === selectedRun?.id} className={run.id === selectedRun?.id ? 'selected' : ''} onClick={() => selectRun(run.id)}><span className="trialHeading"><b><RichText inline text={runTitle(run)}/></b><span className="trialStatus">{run.status}</span></span>{run.experiment && <small className="trialExperiment"><RichText inline text={run.experiment}/></small>}<span className="trialMeta"><code>{run.id}</code><time dateTime={run.startedAt || undefined}>{trialDate(run.startedAt)}</time></span></button>)}</div> : <Empty>No trials recorded yet. Ask the assistant to run an experiment and record its results.</Empty>}</Pane>;
   if (tab === 'Methods') return <><Pane feedback title="Experiment outline"><div className="researchHypothesis"><h3>Hypothesis / research question</h3><RichText text={project?.manifest?.hypothesis || question || 'Define the study question in chat.'}/></div><div data-feedback-exclude className="evidenceRunPicker"><label htmlFor="evidence-run">Experiment</label><select id="evidence-run" value={selectedRun?.id || view.runs[0]?.id || ''} onChange={event => selectRun(event.target.value)}>{!view.runs.length && <option value="">No experiments yet</option>}{view.runs.map(run => <option key={run.id} value={run.id}>{runTitle(run)} · {run.status}</option>)}</select></div><ExperimentDetails run={selectedRun || view.runs[0]}/></Pane><Pane title="Project setup"><div className="projectSetupContent">{infrastructure}<h3>Project code</h3>{project?.files?.length ? <div className="fileInventory">{project.files.map(file => <code key={file}>{file}</code>)}</div> : <Empty>No source files recorded yet.</Empty>}{project?.datasets?.length > 0 && <><h3>Datasets</h3><ul>{project.datasets.map(item => <li key={item.id}>{item.name}</li>)}</ul></>}</div></Pane></>;
   const linkedRuns = view.stale ? view.runs.filter(run => run.status === 'complete') : view.findings.length ? view.runs.filter(run => view.findings.some(finding => finding.runs.includes(run.id))) : view.runs.slice(0, 1);
-  const overview = <div className="researchBrief executiveBrief"><div className="researchCounts"><span><b>{view.completed}</b> completed</span><span><b>{view.active}</b> active</span><span><b>{view.artifacts.length}</b> artifacts</span></div>{question && <h3 className="researchQuestion"><RichText inline text={question}/></h3>}{view.summary ? <><small>{view.automatic ? 'RESEARCH BRIEF · RECORDED EXPERIMENTS' : 'RESEARCH BRIEF · ASSISTANT/AUTHOR SYNTHESIS'}</small><AnnotatedContent target={view.automatic?undefined:{kind:"summary"}} source={view.summary} title="Study brief" tabIndex={0} aria-label="Summary annotation surface"><RichText text={view.summary}/></AnnotatedContent>{view.stale && <p className="warningText">This brief predates a completed experiment; newer measurements are shown below.</p>}</> : <Empty>{view.runs.length ? (view.active ? 'Experiment in progress. Recorded outcomes will appear here automatically.' : 'No completed experiments yet. Run status and logs are available on Trials.') : 'Start a study in chat. Findings will appear here after an experiment.'}</Empty>}{view.findings.length > 0 && <><h4>Findings</h4>{view.findings.map((finding, i) => <section className="researchFinding" key={i}><RichText text={finding.text}/><small>{finding.missingEvidence ? 'Evidence references incomplete. ' : 'Linked evidence: '}{finding.runs.map(id => runTitle(view.runs.find(run => run.id === id))).join(' · ')}</small></section>)}</>}{linkedRuns.length > 0 && <><h4>Key recorded results</h4>{linkedRuns.map(run => <section key={run.id} className="briefComparison"><strong><RichText inline text={runTitle(run)}/></strong><Metrics metrics={run.metrics} compact/>{metricTables(run.metrics).length > 0 ? <small>Rounded display · full metrics and procedure on Methods</small> : <p className="pendingMetrics">{run.status === 'running' || run.status === 'queued' ? 'Measurements pending.' : 'No metrics recorded.'}</p>}</section>)}</>}{view.limitations.length > 0 && <><h4>Limitations</h4><ul>{view.limitations.map((text, i) => <li key={i}><RichText text={text}/></li>)}</ul></>}{view.completed > 0 && !view.limitations.length && <p className="researchCaveat">Point estimates alone do not establish uncertainty or generalization. Review sample sizes, baselines, and diagnostics in Methods.</p>}</div>;
+  const overview = <div className="researchBrief executiveBrief"><div className="researchCounts"><span><b>{view.completed}</b> completed</span><span><b>{view.active}</b> active</span><span><b>{view.artifacts.length}</b> artifacts</span></div>{question && <h3 className="researchQuestion"><RichText inline text={question}/></h3>}{view.summary ? <><small>{view.automatic ? 'RESEARCH BRIEF · RECORDED EXPERIMENTS' : 'RESEARCH BRIEF · ASSISTANT/AUTHOR SYNTHESIS'}</small><AnnotatedContent target={view.automatic?undefined:{kind:"summary"}} source={view.summary} title="Study brief" tabIndex={0} aria-label="Summary annotation surface"><RichText text={view.summary}/></AnnotatedContent>{view.stale && <p className="warningText">This brief predates a completed experiment; newer measurements are shown below.</p>}</> : <Empty>{view.runs.length ? (view.active ? 'Experiment in progress. Recorded outcomes will appear here automatically.' : 'No completed experiments yet. Run status and logs are available on Trials.') : 'Start a study in chat. Findings will appear here after an experiment.'}</Empty>}{view.findings.length > 0 && <><h4>Findings</h4>{view.findings.map((finding, i) => <section className="researchFinding" key={i}><RichText text={finding.text}/><small>{finding.missingEvidence ? 'Evidence references incomplete. ' : 'Linked evidence: '}{finding.runs.map(id => runTitle(view.runs.find(run => run.id === id))).join(' · ')}</small></section>)}</>}{linkedRuns.length > 0 && <><h4>Key recorded results</h4>{linkedRuns.map(run => <section key={run.id} className="briefComparison"><strong><RichText inline text={runTitle(run)}/></strong><Metrics metrics={run.metrics} compact status={run.status}/></section>)}</>}{view.limitations.length > 0 && <><h4>Limitations</h4><ul>{view.limitations.map((text, i) => <li key={i}><RichText text={text}/></li>)}</ul></>}{view.completed > 0 && !view.limitations.length && <p className="researchCaveat">Point estimates alone do not establish uncertainty or generalization. Review sample sizes, baselines, and diagnostics in Methods.</p>}</div>;
   return <Pane feedback title="Study brief"><div className="studyBriefContent">{overview}<div className="researchBrief"><h4>Recommended next moves</h4><ol>{(view.nextSteps.length ? view.nextSteps : !project?.root ? ['Open or create a project using the top bar.'] : !view.runs.length ? ['State a research question and link the relevant dataset.', 'Ask the assistant to define a baseline and run a small reproducible pilot.'] : [view.failed ? 'Inspect failed run logs and resolve the reported errors.' : 'Review the recorded findings and figure interpretations.', 'Check robustness across seeds or held-out data and quantify uncertainty.', 'Draft the supported findings with citations and limitations.']).map((text, i) => <li key={i}><RichText text={text}/></li>)}</ol></div></div></Pane>;
 }
 
