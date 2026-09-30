@@ -97,9 +97,9 @@ try {
   await surface
     .getByText("First complete sentence.", { exact: false })
     .waitFor();
-  const select = async (locator, start, end) => {
-    await locator.evaluate(
-      (el, { start, end }) => {
+  const select = async (locator, start, end, focusImmediately = false) => {
+    return locator.evaluate(
+      (el, { start, end, focusImmediately }) => {
         el.closest(".annotationSurface")?.focus({ preventScroll: true });
         const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
         let n;
@@ -119,8 +119,21 @@ try {
         el.dispatchEvent(
           new MouseEvent("mouseup", { bubbles: true, button: 0 }),
         );
+        if (focusImmediately) return new Promise(resolve => {
+          let frames = 0;
+          const focusFirstFrame = () => {
+            const input = document.querySelector('[aria-label="Annotation feedback"]');
+            if (!input && ++frames < 120) return requestAnimationFrame(focusFirstFrame);
+            input?.focus();
+            resolve({
+              popup: !!input,
+              marks: el.closest('.pdfPage').querySelectorAll('.draftHighlight').length,
+            });
+          };
+          requestAnimationFrame(focusFirstFrame);
+        });
       },
-      { start, end },
+      { start, end, focusImmediately },
     );
   };
   const drag = async (locator, start, end) => {
@@ -398,15 +411,26 @@ try {
       name: "Fixture multi-page evidence",
     }),
     pdfPage = reader.locator(".pdfPage").first();
+  const firstFocusFrame = await select(pdfPage.locator(".textLayer"), 7, {offset: 20}, true);
+  assert.ok(firstFocusFrame.popup && firstFocusFrame.marks > 0, "PDF highlight must exist when the feedback field first receives focus");
+  await page.getByRole("button", {name: "Cancel annotation", exact: true}).click();
   await drag(pdfPage.locator(".textLayer span").first(), 7, 20);
   await page.getByRole("dialog", { name: "Add annotation" }).waitFor();
   assert.equal(
     await page.evaluate(() => getSelection().toString()),
     "first complet",
   );
-  await page
-    .getByRole("textbox", { name: "Annotation feedback" })
-    .fill("Discuss page one.");
+  const pdfFeedback = page.getByRole("textbox", { name: "Annotation feedback" });
+  await pdfFeedback.click();
+  await pdfFeedback.pressSequentially("Discuss page one.");
+  const highlight = pdfPage.locator(".draftHighlight").first();
+  const clip = await highlight.boundingBox();
+  const paintedHighlight = await page.screenshot({clip});
+  await highlight.evaluate(el => { el.style.visibility = "hidden"; });
+  const withoutHighlight = await page.screenshot({clip});
+  await highlight.evaluate(el => { el.style.visibility = ""; });
+  assert.notDeepEqual(paintedHighlight, withoutHighlight, "PDF highlight must remain visibly painted while typing");
+  await page.screenshot({path: path.join(evidence, "pdf-feedback-focus.png")});
   await page
     .getByRole("button", { name: "Add to message", exact: true })
     .click();

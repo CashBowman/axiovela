@@ -1,5 +1,5 @@
 import {MessageSquarePlus} from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   feedbackExcluded,
   capturePassage,
@@ -53,7 +53,7 @@ export default function AnnotationSurface({
     target.addEventListener('load',update,true);window.addEventListener('resize',update);document.addEventListener('scroll',update,true);update();
     return()=>{cancelAnimationFrame(frame);resize.disconnect();mutation.disconnect();target.removeEventListener('load',update,true);window.removeEventListener('resize',update);document.removeEventListener('scroll',update,true);};
   },[annotating,textRef,pageScale]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = root.current,
       target = textRef?.current || element;
     if (!element || !target) return;
@@ -66,67 +66,68 @@ export default function AnnotationSurface({
     }
     let frame,
       disposed = false;
+    const measure = async () => {
+      const projection = textProjection(target),
+        base = element.getBoundingClientRect();
+      const panelHash = annotations.some((n) => n.target?.panelHash)
+        ? [
+            ...new Uint8Array(
+              await crypto.subtle.digest(
+                "SHA-256",
+                new TextEncoder().encode(projection.text),
+              ),
+            ),
+          ]
+            .map((x) => x.toString(16).padStart(2, "0"))
+            .join("")
+        : "";
+      if (disposed) return;
+      const next = [
+        ...annotations,
+        ...(draft ? [{ id: "draft", anchor: draft }] : []),
+      ].flatMap((item) => {
+        if (page && item.anchor.page !== page) return [];
+        if (
+          item.target?.kind === "snapshot" &&
+          (item.target.panelHash
+            ? item.target.panelHash !== panelHash
+            : item.target.source !== projection.text)
+        )
+          return [];
+        const figure =
+          item.anchor.kind === "figure"
+            ? [...target.querySelectorAll("img")][item.anchor.figureIndex]
+            : null;
+        const box = figure?.getBoundingClientRect();
+        const rects =
+          box && figure.getAttribute("src") === item.anchor.asset
+            ? [
+                {
+                  left: box.left - base.left,
+                  top: box.top - base.top,
+                  width: box.width,
+                  height: box.height,
+                },
+              ]
+            : item.anchor.kind === "figure" ? [] : rangeRects(rangeFromAnchor(projection, item.anchor), element);
+        if (item.id === "draft" && rects.length) {
+          const r = rects.at(-1);
+          callbacks.current.onDraftRect?.({
+            left: base.left + r.left,
+            top: base.top + r.top,
+            width: r.width,
+            height: r.height,
+          });
+        }
+        return rects.length ? [{ ...item, rects }] : [];
+      });
+      setMarks((old) =>
+        JSON.stringify(old) === JSON.stringify(next) ? old : next,
+      );
+    };
     const update = () => {
       cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(async () => {
-        const projection = textProjection(target),
-          base = element.getBoundingClientRect();
-        const panelHash = annotations.some((n) => n.target?.panelHash)
-          ? [
-              ...new Uint8Array(
-                await crypto.subtle.digest(
-                  "SHA-256",
-                  new TextEncoder().encode(projection.text),
-                ),
-              ),
-            ]
-              .map((x) => x.toString(16).padStart(2, "0"))
-              .join("")
-          : "";
-        if (disposed) return;
-        const next = [
-          ...annotations,
-          ...(draft ? [{ id: "draft", anchor: draft }] : []),
-        ].flatMap((item) => {
-          if (page && item.anchor.page !== page) return [];
-          if (
-            item.target?.kind === "snapshot" &&
-            (item.target.panelHash
-              ? item.target.panelHash !== panelHash
-              : item.target.source !== projection.text)
-          )
-            return [];
-          const figure =
-            item.anchor.kind === "figure"
-              ? [...target.querySelectorAll("img")][item.anchor.figureIndex]
-              : null;
-          const box = figure?.getBoundingClientRect();
-          const rects =
-            box && figure.getAttribute("src") === item.anchor.asset
-              ? [
-                  {
-                    left: box.left - base.left,
-                    top: box.top - base.top,
-                    width: box.width,
-                    height: box.height,
-                  },
-                ]
-              : item.anchor.kind === "figure" ? [] : rangeRects(rangeFromAnchor(projection, item.anchor), element);
-          if (item.id === "draft" && rects.length) {
-            const r = rects.at(-1);
-            callbacks.current.onDraftRect?.({
-              left: base.left + r.left,
-              top: base.top + r.top,
-              width: r.width,
-              height: r.height,
-            });
-          }
-          return rects.length ? [{ ...item, rects }] : [];
-        });
-        setMarks((old) =>
-          JSON.stringify(old) === JSON.stringify(next) ? old : next,
-        );
-      });
+      frame = requestAnimationFrame(measure);
     };
     const resize = new ResizeObserver(update);
     resize.observe(element);
@@ -138,7 +139,9 @@ export default function AnnotationSurface({
     });
     document.addEventListener("scroll", update, true);
     window.addEventListener("resize", update);
-    update();
+    // Focus in the popup clears native selection. Paint the anchored highlight
+    // in this commit, before the popup can appear; only later reflows are deferred.
+    measure();
     return () => {
       disposed = true;
       cancelAnimationFrame(frame);

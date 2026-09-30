@@ -283,3 +283,7 @@ update or failed-installer recovery support.
 ## 0.2.15: durable figure cleanup
 
 Trash confirmation adds a project-scoped reminder to subsequent assistant prompts. Restoring the figure cancels it. Source cleanup follows the active access mode and protects shared outputs and historical sessions.
+
+## 0.2.16: PDF annotation focus
+
+Persistent passage highlights draw before the Leave feedback popup can receive focus. Regression checks cover immediate focus and visible highlighting while typing. Built locally; Windows is unsigned and Mac packages are ad-hoc signed without notarization.
