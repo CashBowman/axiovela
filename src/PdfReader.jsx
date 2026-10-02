@@ -1,5 +1,6 @@
+import PdfAreaSelection from "./PdfAreaSelection.jsx";
 import AnnotationSurface from "./AnnotationSurface.jsx";
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from "react";
 import { getDocument, GlobalWorkerOptions, TextLayer } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "pdfjs-dist/web/pdf_viewer.css";
@@ -16,6 +17,8 @@ const PdfPage = React.memo(function PdfPage({
   zoom,
   container,
   annotation = {},
+  areaMode = false,
+  onAreaCapture,
   onSource,
   markers = emptyMarkers,
 }) {
@@ -122,6 +125,8 @@ const PdfPage = React.memo(function PdfPage({
       textRef={paint}
       page={number}
       pageScale={zoom}
+      pdfFingerprint={pdf.fingerprints.join(":")}
+      pdfAreaMode={areaMode}
       className="pdfPage"
       data-page={number}
       style={{ width: size.width * zoom, height: size.height * zoom }}
@@ -137,6 +142,7 @@ const PdfPage = React.memo(function PdfPage({
         });
       }}
     >
+      {areaMode && <PdfAreaSelection root={root} textRef={paint} page={number} scale={zoom} fingerprint={pdf.fingerprints.join(":")} onCapture={onAreaCapture}/>}
       <div
         ref={paint}
         className="pdfPaint"
@@ -197,7 +203,9 @@ export default function PdfReader({
     [error, setError] = useState(""),
     [page, setPage] = useState(1),
     [zoom, setZoom] = useState(0.9),
-    [fit, setFit] = useState(true);
+    [fit, setFit] = useState(true),
+    [areaMode, setAreaMode] = useState(false);
+  const finishArea = useCallback((...args) => { setAreaMode(false); annotation?.onCapture?.(...args); }, [annotation?.onCapture]);
   const container = useRef(),
     reader = useRef(),
     zoomRef = useRef(zoom),
@@ -212,6 +220,7 @@ export default function PdfReader({
   useEffect(() => {
     let canceled = false;
     setDoc(null);
+    setAreaMode(false);
     setError("");
     setPage(1);
     fitWidth();
@@ -437,6 +446,7 @@ export default function PdfReader({
         >
           +
         </button>
+        {annotation?.annotating && <button aria-pressed={areaMode} onClick={()=>setAreaMode(v=>!v)} title="Drag a box around an equation or figure">Select area</button>}
         <span className="pdfZoomValue">{Math.round(zoom * 100)}%</span>
       </div>
       <div ref={container} className="pdfCanvasScroll" onScroll={scrolled}>
@@ -454,6 +464,8 @@ export default function PdfReader({
               onSource={onSource}
               markers={markers}
               annotation={annotation}
+              areaMode={areaMode && !!annotation?.annotating}
+              onAreaCapture={finishArea}
             />
           ))
         ) : (

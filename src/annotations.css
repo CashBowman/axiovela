@@ -217,3 +217,8 @@
 .viewerImageFrame{position:relative;flex:none;margin:auto;display:flex}.viewerImageFrame>.figureFeedbackButton{position:absolute;right:8px;bottom:8px;margin:0}.viewerImageFrame>img{display:block}
 
 .figureImageFrame .figureImage>span{right:48px}.figureFeedbackButton svg{flex-shrink:0}.figureFeedbackButton.hasFeedback{width:auto;min-width:30px}
+
+.pdfAreaSelection { position: absolute; inset: 0; z-index: 5; cursor: crosshair; touch-action: none; user-select: none; }
+.pdfAreaSelection:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.pdfAreaBox { position: absolute; border: 1px solid #39698e; background: #4d78983d; pointer-events: none; }
+.pdfToolbar button[aria-pressed="true"] { background: #dce8f2; color: #183f61; }

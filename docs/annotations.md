@@ -155,3 +155,11 @@ sequences, not field INP. See the 0.2.7 release notes for recorded measurements.
 Click or Tab into an item, then use Up/Down to move through visible sources and science/engineering results in displayed group order. Home/End select the first/last item without wrapping. Search and type/reading-status filters define the reachable items. Filtering away the selection leaves the reader open and gives the first visible item the list's Tab entry. Read checkboxes remain separate Tab stops; Space toggles them.
 
 Run `npm run library:navigation:smoke` for isolated browser coverage and `npm run annotations:smoke` for packaged Library/reader/clipboard checks.
+
+## PDF math selection
+
+Dragging selects the exact PDF text, without sentence expansion. New highlights store bounded page-relative rectangles and the PDF fingerprint, independently of native browser selection. They remain visible while typing feedback, zooming, and unloading/reloading page canvases. Old passage anchors remain readable without rewriting saved records. Revision checks still reject stale feedback.
+
+Use **Select area** to drag a box around an equation or figure. A successful selection returns to text mode; Escape cancels an in-progress drag. Area feedback stores the page and region plus explicitly approximate extracted text, or a no-text label. It does not perform OCR, reconstruct LaTeX, attach a screenshot, or embed annotations in the original PDF. Existing source navigation and feedback routing are preserved.
+
+PDF.js and the LaTeX compiler are unchanged. The region overlay uses mouse, pen or touch pointer events. PDF canvases remain limited to nearby pages; annotation typing does not render pages. Run `npm run test:pdf-annotations` against the real two-column LaTeX fixture, plus the application's annotation integration checks. The test covers exact selection, focus, zoom, page unloading, area capture/cancel, and 1×/2× display scaling under 4× CPU throttling; this is not native Windows/macOS hardware acceptance.

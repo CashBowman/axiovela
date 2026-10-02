@@ -441,7 +441,10 @@ try {
       const mark = el
           .querySelector(".passageHighlight")
           .getBoundingClientRect(),
-        text = el.querySelector(".textLayer span").getBoundingClientRect();
+        node = el.querySelector(".textLayer span").firstChild,
+        range = document.createRange();
+      range.setStart(node,7); range.setEnd(node,20);
+      const text = range.getBoundingClientRect();
       return {
         left: mark.left - text.left,
         top: mark.top - text.top,

@@ -1,3 +1,4 @@
+import {normalizedPdfRects, pdfHighlightRects} from "../shared/pdf-annotations.mjs";
 import {MessageSquarePlus} from "lucide-react";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
@@ -24,6 +25,8 @@ export default function AnnotationSurface({
   onReadDoubleClick,
   page,
   pageScale = 1,
+  pdfFingerprint,
+  pdfAreaMode = false,
   ...props
 }) {
   const captureTimer = useRef();
@@ -36,7 +39,7 @@ export default function AnnotationSurface({
   const [images, setImages] = useState([]);
   useEffect(() => {
     const element=root.current, target=textRef?.current || element;
-    if(!element || !annotating)return;
+    if(!element || !annotating || page)return;
     let frame;
     const update=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{
       const base=element.getBoundingClientRect();
@@ -67,7 +70,8 @@ export default function AnnotationSurface({
     let frame,
       disposed = false;
     const measure = async () => {
-      const projection = textProjection(target),
+      const needsText = !page || [...annotations, ...(draft ? [{anchor:draft}] : [])].some(n => n.anchor.page === page && !n.anchor.pdfRects);
+      const projection = needsText ? textProjection(target) : {text:"",entries:[]},
         base = element.getBoundingClientRect();
       const panelHash = annotations.some((n) => n.target?.panelHash)
         ? [
@@ -100,7 +104,9 @@ export default function AnnotationSurface({
             : null;
         const box = figure?.getBoundingClientRect();
         const rects =
-          box && figure.getAttribute("src") === item.anchor.asset
+          page && item.anchor.pdfRects
+            ? pdfHighlightRects(item.anchor, base.width, base.height, pdfFingerprint)
+            : box && figure.getAttribute("src") === item.anchor.asset
             ? [
                 {
                   left: box.left - base.left,
@@ -150,8 +156,9 @@ export default function AnnotationSurface({
       document.removeEventListener("scroll", update, true);
       window.removeEventListener("resize", update);
     };
-  }, [annotations, draft, page, textRef, pageScale]);
+  }, [annotations, draft, page, textRef, pageScale, pdfFingerprint]);
   function capture(event, exact = false) {
+    if (pdfAreaMode) return;
     if (!event.target?.isConnected || root.current?.closest("[inert]")) return;
     if (
       !annotating ||
@@ -163,7 +170,7 @@ export default function AnnotationSurface({
     if (event.target.closest(".annotationSurface") !== root.current) return;
     const target = textRef?.current || root.current;
     const projection = textProjection(target);
-    const anchor = capturePassage(target, event, { exact, projection });
+    const anchor = capturePassage(target, event, { exact: exact || !!page, projection });
     if (anchor) {
       const rects = rangeRects(rangeFromAnchor(projection, anchor), root.current);
       const rect = rects[0], last = rects.at(-1), base = root.current.getBoundingClientRect();
@@ -174,6 +181,8 @@ export default function AnnotationSurface({
         ...(page
           ? {
               page,
+              pdfFingerprint,
+              ...(normalizedPdfRects(rects, base.width, base.height).length ? {pdfRects: normalizedPdfRects(rects, base.width, base.height)} : {}),
               x: (rect?.left || 0) / pageScale,
               y: (rect?.top || 0) / pageScale,
             }
@@ -211,6 +220,7 @@ export default function AnnotationSurface({
       }}
       onDoubleClickCapture={(e) => {
         clearTimeout(captureTimer.current);
+        if (pdfAreaMode) return;
         window.dispatchEvent(new Event("axiovela-dismiss-feedback"));
         onReadDoubleClick?.(e);
       }}
