@@ -38,7 +38,7 @@ try {
   await page.keyboard.press('ArrowRight');
   assert.equal(await sections.getByRole('button', {name: 'Methods', exact: true}).getAttribute('aria-pressed'), 'true');
   await page.keyboard.press('ArrowRight');
-  assert.equal(await sections.getByRole('button', {name: 'Trials', exact: true}).getAttribute('aria-pressed'), 'true');
+  assert.equal(await sections.getByRole('button', {name: 'Library', exact: true}).getAttribute('aria-pressed'), 'true');
   await page.keyboard.press('Home');
   assert.equal(await sections.getByRole('button', {name: 'Results', exact: true}).getAttribute('aria-pressed'), 'true');
   await page.keyboard.press('ArrowLeft');
@@ -117,17 +117,24 @@ try {
   const metadata = JSON.parse(await readFile(path.join(first, 'assistant/conversations', firstJob.conversationId + '.json'), 'utf8'));
   assert.equal(metadata.archived, false, 'native sidebar cleanup must not archive app history');
   await page.getByRole('button', {name:'History',exact:true}).click();
-  await page.getByRole('combobox', {name:'History project'}).selectOption('');
+  // History is intentionally scoped to the active project. Switch projects
+  // explicitly instead of assuming the removed all-projects picker exists.
+  assert.equal(await page.getByRole('combobox', {name:'History project'}).locator('option').count(), 1);
+  await page.getByRole('textbox', {name:'Search conversations'}).fill('Compare OpenAI');
+  await page.getByText('No conversations found.', {exact:false}).waitFor();
+  await page.getByRole('button', {name:'Close conversation history'}).click();
+  await open(second);
+  await page.getByRole('button', {name:'History',exact:true}).click();
   await page.getByRole('textbox', {name:'Search conversations'}).fill('Compare OpenAI');
   await page.locator('.historyOpen').filter({hasText:'Compare OpenAI'}).waitFor();
   await page.screenshot({path:path.join(evidence,'project-history-search.png')});
   await page.locator('.historyOpen').filter({hasText:'Compare OpenAI'}).click();
   await page.waitForFunction(() => !document.querySelector('.conversationHistory')?.open);
   assert.equal((await api('/api/project')).body.root, second);
+  await open(first);
   await page.getByRole('button', {name:'History',exact:true}).click();
-  await page.getByRole('combobox', {name:'History project'}).selectOption('');
   await page.getByRole('textbox', {name:'Search conversations'}).fill('');
-  await page.waitForFunction(() => document.querySelector('.conversationHistory [role="status"]')?.textContent === '131 conversations');
+  await page.waitForFunction(() => document.querySelector('.conversationHistory [role="status"]')?.textContent === '130 conversations');
   assert.equal(await page.locator('.historyOpen').count(), 50);
   const nextPage = page.waitForResponse(response => new URL(response.url()).pathname === '/api/assistant/history/search' && new URL(response.url()).searchParams.get('offset') === '50');
   await page.getByRole('button', {name:'Next page',exact:true}).click();
@@ -136,7 +143,7 @@ try {
   assert.equal(await page.locator('.historyOpen').count(), 50);
   await page.screenshot({path:path.join(evidence,'project-history-page.png')});
   assert.deepEqual(errors, []);
-  console.log('Conversation history desktop smoke passed: 131 chats across two projects, repair, rename, pin, archive, reload, follow-up continuity, cross-project search/open and pagination. Existing figure preserved.');
+  console.log('Conversation history desktop smoke passed: 131 chats across two projects, repair, rename, pin, archive, reload, follow-up continuity, project-scoped search/open, explicit project switching and pagination. Existing figure preserved.');
 } catch (error) {
   await page?.screenshot({path:path.join(evidence,'history-failure.png')}).catch(() => {});
   console.error(error, await page?.locator('body').innerText().catch(() => ''));

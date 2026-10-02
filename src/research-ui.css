@@ -244,3 +244,9 @@
 .trialRecord > dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 18px; margin: 0 0 16px; }
 .trialRecord > dl dt, .trialRecord > dl dd { margin: 0; overflow-wrap: anywhere; }
 .trialRecord > .researchMetrics { padding: 0 0 12px; overflow: visible; }
+
+/* Unified Methods keeps each pane independently scrollable and resizable. */
+.experimentOutline { flex: 1; overflow: auto; }
+.experimentOutline > section { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+.experimentProcedure h4 { margin-top: 12px; }
+.executiveBrief > small { display: block; margin-bottom: 12px; letter-spacing: .08em; }

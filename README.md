@@ -4,7 +4,7 @@
 
 <p align="center"><strong>The AI research workbench.</strong><br />Turn a question into experiments, measured results, and a manuscript.</p>
 
-<p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.19">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.19">Release notes</a></p>
+<p align="center"><a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.20">Download</a> · <a href="docs/quick-start.md">Get started</a> · <a href="docs/features.md">Features</a> · <a href="docs/README.md">Documentation</a> · <a href="https://github.com/CashBowman/axiovela/releases/tag/v0.2.20">Release notes</a></p>
 
 https://github.com/user-attachments/assets/7ac19088-7d1c-4231-a579-c2ba46f0c38c
 
@@ -49,39 +49,39 @@ Use Codex, Claude Code, Gemini CLI, OpenCode, Pi, or a supported API connection.
 
 Axiovela runs in its own window on **Linux, Windows, and macOS**. The desktop app includes its runtime; no Git, Node, npm, or GitHub account is needed for the example and basic project management.
 
-**Download Axiovela 0.2.19 · Stable release**
+**Download Axiovela 0.2.20 · Stable release**
 
 This release adds exact PDF text selection, highlights that survive focus and zoom, and **Select area** for equations and figures. It preserves the responsive chat typing fix from 0.2.17.
 
 **Windows**
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.19/Axiovela-0.2.19-win32-x64-Setup.exe"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/windows.png" alt="Download Windows: Intel / AMD · 64-bit" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.20/Axiovela-0.2.20-win32-x64-Setup.exe"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/windows.png" alt="Download Windows: Intel / AMD · 64-bit" width="320" height="88" /></a>
 
-[Windows ARM64 · portable ZIP](https://github.com/CashBowman/axiovela/releases/download/v0.2.19/Axiovela-0.2.19-win32-arm64.zip)
+[Windows ARM64 · portable ZIP](https://github.com/CashBowman/axiovela/releases/download/v0.2.20/Axiovela-0.2.20-win32-arm64.zip)
 
 **macOS**
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.19/Axiovela-0.2.19-darwin-arm64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-arm.png" alt="Download Mac: Apple Silicon" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.20/Axiovela-0.2.20-darwin-arm64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-arm.png" alt="Download Mac: Apple Silicon" width="320" height="88" /></a>
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.19/Axiovela-0.2.19-darwin-x64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-intel.png" alt="Download Mac: Intel" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.20/Axiovela-0.2.20-darwin-x64.dmg"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/mac-intel.png" alt="Download Mac: Intel" width="320" height="88" /></a>
 
 Mac packages are ad-hoc signed and are not Apple-notarized. Follow the [Mac installation guidance](docs/mac-installation.md) and your device policy.
 
 **Linux**
 
-<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.19/Axiovela-0.2.19-linux-x64.zip"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-zip.png" alt="Download Linux: 64-bit · ZIP archive" width="320" height="88" /></a>
+<a href="https://github.com/CashBowman/axiovela/releases/download/v0.2.20/Axiovela-0.2.20-linux-x64.zip"><img src="https://raw.githubusercontent.com/CashBowman/axiovela/main/docs/assets/downloads/linux-zip.png" alt="Download Linux: 64-bit · ZIP archive" width="320" height="88" /></a>
 
-[Linux ARM64 · portable ZIP](https://github.com/CashBowman/axiovela/releases/download/v0.2.19/Axiovela-0.2.19-linux-arm64.zip)
+[Linux ARM64 · portable ZIP](https://github.com/CashBowman/axiovela/releases/download/v0.2.20/Axiovela-0.2.20-linux-arm64.zip)
 
-[Help choosing a download, portable ZIPs, and release notes](https://github.com/CashBowman/axiovela/releases/tag/v0.2.19)
+[Help choosing a download, portable ZIPs, and release notes](https://github.com/CashBowman/axiovela/releases/tag/v0.2.20)
 
 Existing projects and settings remain compatible. Open **Help → Try the example study**, or choose **Project** and connect your provider below the chat composer.
 
-[Installation and first session](docs/quick-start.md) · [Platform validation](https://github.com/CashBowman/axiovela/releases/tag/v0.2.19) · [Mac installation](docs/mac-installation.md)
+[Installation and first session](docs/quick-start.md) · [Platform validation](https://github.com/CashBowman/axiovela/releases/tag/v0.2.20) · [Mac installation](docs/mac-installation.md)
 
 ## Develop on your Mac or Windows computer
 
-The `main` branch includes the 0.2.19 release: a searchable Library with science and engineering results, passage and image feedback, project history and explained cross-project connections, concurrent chats across assistants and projects, background follow-up queues, responsive task status, guided update checks, and source/PDF exports with LaTeX source navigation. Three selectable [research profiles](docs/research-profiles.md) preserve domain-specific research instructions.
+The `main` branch includes the 0.2.20 release: a searchable Library with science and engineering results, passage and image feedback, project history and explained cross-project connections, concurrent chats across assistants and projects, background follow-up queues, responsive task status, guided update checks, and source/PDF exports with LaTeX source navigation. Three selectable [research profiles](docs/research-profiles.md) preserve domain-specific research instructions.
 
 Clone this repository and follow [Development setup](docs/development-setup.md) for the exact Mac, Windows, and Linux commands, local packaging, and acceptance checks. GitHub desktop and multi-OS builds run only when manually requested. See the current release record for device reports and remaining acceptance checks.
 
@@ -112,7 +112,7 @@ For the standalone, dependency-free example, run `node examples/linear-regressio
 Free to use, modify, and share under the [MIT License](LICENSE), without warranty and subject to its liability disclaimer. Read the [beta notice](BETA_NOTICE.md) before use. Existing projects and the `methodflow` and `ml-workbench` commands remain compatible. [Branding and compatibility](docs/branding.md)
 
 
-Version **0.2.19** adds focused file edits and concise task delivery to reduce unnecessary generation, while preserving research panels, verification, PDF annotations and responsive typing. See [release notes](docs/releases/0.2.19.md).
+Version **0.2.20** combines Methods and Trials into one Methods page, with the trial ledger above a compact experiment outline and the selected trial record beside it. Study briefs are concise executive takeaways without numbers. [Release notes](docs/releases/0.2.20.md).
 
 ### PDF annotation update
 

@@ -291,3 +291,7 @@ Persistent passage highlights draw before the Leave feedback popup can receive f
 ## 0.2.19: query efficiency
 
 Focused API file edits, recoverable backups and concise task delivery. See [release notes](releases/0.2.19.md).
+
+## 0.2.20: unified Methods
+
+Merged Methods and Trials, removed redundant panels and made the Study brief a short qualitative executive takeaway. See [release notes](releases/0.2.20.md).

@@ -48,12 +48,12 @@ These features are implemented in the current release. Optional integrations req
 ## Experiments and evidence
 
 - Durable native run records, progress, logs, cancellation, metrics, and artifacts
-- Project-adaptive Results, Methods, and Trials panes
+- Project-adaptive Results and unified Methods panes
 - Automatic figure/PDF discovery and metric rendering
 - Responsive figure galleries and full-window zoom/browse viewer
 - All-experiments figure view with one experiment/run filter, topic headers, and run labels
 - Evidence-linked executive briefs, figure captions/interpretations, and stale-summary indicators
-- Full-height Results gallery, formatted study brief, and separate Methods procedures/logs
+- Full-height Results gallery, concise qualitative Study brief, and unified Methods ledger, trial record and experiment outline
 - Structured metric comparison tables, safe legacy dictionary display, and exact-value inspection
 - Source-informed scientific visualization instructions and static-export review guidance
 - Selectable run ledger with recorded metrics, parameters, logs, and ownership-aware cancellation

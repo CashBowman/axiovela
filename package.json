@@ -1,6 +1,6 @@
 {
   "name": "ml-theory-workbench",
-  "version": "0.2.19",
+  "version": "0.2.20",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -33,7 +33,7 @@
     "install:cli": "npm run build && npm link --no-audit --no-fund",
     "check": "npm run build",
     "example:smoke": "node scripts/example-smoke.mjs",
-    "release:check": "node --test scripts/query-efficiency.test.mjs && npm run repository:check && npm run check && npm run figures:test && npm run synctex:test && npm run security:smoke && npm run backend:smoke && npm run assistant:smoke && npm run provider:smoke && npm run cli-provider:smoke && npm run agentic:test && npm run research:smoke && npm run markdown:smoke && npm run example:smoke",
+    "release:check": "node --test scripts/query-efficiency.test.mjs scripts/executive-brief.test.mjs && npm run repository:check && npm run check && npm run figures:test && npm run synctex:test && npm run security:smoke && npm run backend:smoke && npm run assistant:smoke && npm run provider:smoke && npm run cli-provider:smoke && npm run agentic:test && npm run research:smoke && npm run markdown:smoke && npm run example:smoke",
     "social:render": "node scripts/render-social-preview.mjs",
     "security:smoke": "node scripts/security-smoke.mjs",
     "install:smoke": "node scripts/install-smoke.mjs",
@@ -69,7 +69,9 @@
     "codex:sidebar:test": "node --test scripts/codex-sidebar.test.mjs",
     "figures:test": "node --test scripts/figure-actions.test.mjs scripts/provider-usage.test.mjs",
     "metrics:smoke": "node scripts/metrics-rendering-smoke.mjs",
-    "test:pdf-annotations": "node scripts/pdf-annotations-smoke.mjs"
+    "test:pdf-annotations": "node scripts/pdf-annotations-smoke.mjs",
+    "methods:test": "node --test scripts/executive-brief.test.mjs",
+    "methods:smoke": "node scripts/methods-smoke.mjs"
   },
   "dependencies": {
     "@citation-js/core": "^0.7.21",

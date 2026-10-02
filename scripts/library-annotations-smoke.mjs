@@ -279,7 +279,7 @@ try {
     await page
       .locator('nav[aria-label="Workspace sections"] button')
       .allTextContents(),
-    ["Results", "Methods", "Trials", "Library", "Write-up"],
+    ["Results", "Methods", "Library", "Write-up"],
   );
   // Seed a deterministic readable article through the production importer with a fixture fetcher.
   const { importLibrary } = await import("../server/library.mjs");

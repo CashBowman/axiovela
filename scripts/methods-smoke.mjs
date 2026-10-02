@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {createServer} from 'vite';
+import {chromium} from 'playwright-core';
+const fixture=`import React,{useState} from 'react';import{createRoot}from'react-dom/client';import{ResearchLeft,ResearchMiddle}from'/src/ResearchPanels.jsx';import'/src/style.css';import'/src/research-ui.css';
+const runs=[{id:'baseline',name:'Baseline',status:'complete',summary:'Recorded trial result.',method:{objective:'Assess the baseline.',data:'Held-out observations.',steps:['Fit the baseline.','Check the held-out predictions.']},metrics:{accuracy:0.938123},logs:['HIDDEN_EXECUTION_LOG'],parameters:{seed:7}},{id:'alternative',name:'Alternative',status:'failed',method:{objective:'Inspect the alternative.'},error:'Fixture failure detail.',metrics:{}}];
+function Pane({title,children}){return <section className="pane"><header className="paneHead"><strong>{title}</strong></header>{children}</section>}
+function App(){const[id,setId]=useState('baseline');const[summary,setSummary]=useState('The baseline is promising, but generalization remains uncertain. Validate robustness before expanding the study.');window.setSummary=setSummary;const project={runs,research:{summary},manifest:{researchQuestion:'Can the baseline support the decision?'}};const selectedRun=runs.find(r=>r.id===id);return <main className="app"><div className="workspace" style={{height:'90vh'}}><div className="leftCol resizableColumn" style={{gridTemplateRows:'55fr 45fr',gap:8}}><div style={{display:'contents'}}><ResearchLeft Pane={Pane} tab="Methods" project={project} selectedRun={selectedRun} selectRun={setId}/></div></div><div/><div className="middleCol"><ResearchMiddle Pane={Pane} tab="Methods" project={project} selectedRun={selectedRun}/></div><div/><div className="rightCol"><ResearchLeft Pane={Pane} tab="Results" project={project}/></div></div></main>};createRoot(document.getElementById('fixture')).render(<App/>);`;
+const server=await createServer({optimizeDeps:{include:['react','react-dom/client']},server:{host:'127.0.0.1',port:0},appType:'custom',plugins:[{name:'methods-fixture',configureServer(server){server.middlewares.use('/fixture',async(req,res)=>{res.setHeader('Content-Type','text/html');res.end(await server.transformIndexHtml('/fixture','<!doctype html><div id="fixture"></div><script type="module" src="/methods-fixture.jsx"></script>'));});},resolveId(id){if(id==='/methods-fixture.jsx')return '/methods-fixture.jsx';},load(id){if(id==='/methods-fixture.jsx')return fixture;}}]});
+let browser;
+try{
+ await server.listen();browser=await chromium.launch({headless:true});const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(server.resolvedUrls.local[0]+'fixture');
+ const pane=title=>page.locator('.pane').filter({has:page.locator('.paneHead strong',{hasText:new RegExp('^'+title+'$')})});
+ await pane('Trial ledger').waitFor();await pane('Trial record').getByText('Recorded trial result.',{exact:true}).waitFor();
+ const ledger=await pane('Trial ledger').boundingBox(),outline=await pane('Experiment outline').boundingBox();assert.ok(outline.y>=ledger.y+ledger.height-1,'Outline follows ledger on the left');
+ for(const title of ['Project setup','Experiment record','Execution log'])assert.equal(await pane(title).count(),0);
+ assert.equal(await page.getByText('HIDDEN_EXECUTION_LOG',{exact:true}).count(),0);
+ await pane('Trial record').getByText('Exact recorded values',{exact:true}).click();assert.ok((await pane('Trial record').locator('pre').first().innerText()).includes('0.938123'));
+ assert.doesNotMatch(await pane('Study brief').innerText(),/\p{N}/u);assert.equal(await pane('Study brief').locator('table').count(),0);
+ await pane('Trial ledger').getByRole('button',{name:'Alternative',exact:false}).click();await pane('Experiment outline').getByText('Inspect the alternative.',{exact:true}).waitFor();await pane('Trial record').getByRole('alert').getByText('Fixture failure detail.',{exact:true}).waitFor();
+ await page.evaluate(()=>window.setSummary('Legacy result: 0.93 accuracy.'));await pane('Study brief').getByText('Results are recorded.',{exact:false}).waitFor();assert.doesNotMatch(await pane('Study brief').innerText(),/\p{N}/u);
+ assert.deepEqual(errors,[]);await fs.mkdir('.local/methods',{recursive:true});await page.screenshot({path:'.local/methods/fixture.png'});console.log('Unified Methods passed: panel order, shared trial selection, exact metrics, failure detail, removed panels and numeric-free brief.');
+}finally{await browser?.close();await server.close();}

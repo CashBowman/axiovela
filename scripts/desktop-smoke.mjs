@@ -256,8 +256,16 @@ Axiovela packaged LaTeX: $\int_0^1 x^2\,dx=1/3$.
   console.log('Desktop smoke: example loaded; checking project picker');
   const metric = JSON.parse(await readFile(path.join(project.root, 'runs/ols-seed-7/metrics.json'), 'utf8'));
   assert.ok(Object.keys(metric).length > 0);
-  await page.getByRole('button', {name: 'Trials', exact: true}).click();
+  await page.getByRole('button', {name: 'Methods', exact: true}).click();
   await page.locator('.trialLedger button').first().waitFor();
+  assert.equal(await page.getByRole('navigation', {name:'Workspace sections'}).getByRole('button', {name:'Trials',exact:true}).count(), 0);
+  const ledgerPane = page.locator('.workspace:not(.inactiveLibraryWorkspace) .leftCol .pane').filter({has:page.locator('.paneHead strong',{hasText:'Trial ledger'})});
+  const outlinePane = page.locator('.workspace:not(.inactiveLibraryWorkspace) .leftCol .pane').filter({has:page.locator('.paneHead strong',{hasText:'Experiment outline'})});
+  const ledgerBox = await ledgerPane.boundingBox(), outlineBox = await outlinePane.boundingBox();
+  assert.ok(outlineBox.y >= ledgerBox.y + ledgerBox.height, 'Experiment outline is below Trial ledger');
+  assert.equal(await page.locator('.workspace:not(.inactiveLibraryWorkspace) .middleCol .paneHead strong').textContent(), 'Trial record');
+  for (const title of ['Project setup','Experiment record','Execution log']) assert.equal(await page.locator('.workspace:not(.inactiveLibraryWorkspace) .paneHead strong').filter({hasText:new RegExp('^'+title+'$')}).count(),0);
+
   assert.equal(await page.getByRole('progressbar').count(), 0);
   const trialPath = path.join(project.root, 'runs/ols-seed-7/run.json');
   const trialSource = await readFile(trialPath, 'utf8');
@@ -293,7 +301,7 @@ Axiovela packaged LaTeX: $\int_0^1 x^2\,dx=1/3$.
   const plannedRun = path.join(blank, 'runs', 'planned-01');
   await mkdir(plannedRun, {recursive: true});
   await writeFile(path.join(plannedRun, 'run.json'), JSON.stringify({id: 'planned-01', name: 'Small pilot', experiment: 'Baseline comparison', status: 'running', startedAt: new Date().toISOString(), metrics: {}, artifacts: []}));
-  await page.getByRole('button', {name: 'Trials', exact: true}).click();
+  await page.getByRole('button', {name: 'Methods', exact: true}).click();
   await page.locator('.trialLedger').getByText('Small pilot', {exact: true}).waitFor();
   await page.locator('.trialLedger').getByText('Baseline comparison', {exact: true}).waitFor();
   await page.getByRole('button', {name: 'Results', exact: true}).click();

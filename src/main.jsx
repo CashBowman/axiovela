@@ -39,7 +39,7 @@ import {sourceAt} from '../shared/synctex.mjs';
 const MarkdownPreview = lazy(() => import('./MarkdownPreview.jsx'));
 const ChatContent = lazy(() => import('./ChatContent.jsx'));
 
-const tabs = ['Results', 'Methods', 'Trials', 'Library', 'Write-up'];
+const tabs = ['Results', 'Methods', 'Library', 'Write-up'];
 
 const messages0 = [
   ['bot', 'Describe the experiment you want to run or the results you want to understand.'],
@@ -421,7 +421,7 @@ function scratchLeftPanes({tab, project, openInfrastructure}) {
 
 function scratchMiddlePanes({tab, project}) {
   const latest = project?.runs?.[0];
-  if (tab === 'Methods') return <><Pane title="Project code"><FileInventory files={project?.files}/></Pane><EmptyResearchPane title="Execution output">{latest ? `${latest.id} is ${latest.status}. Open Trials for its durable progress, metrics, logs, and artifacts.` : 'Concise coding and test activity appears in chat while work is running. Experiment logs and metrics appear on Trials after a run record is created.'}</EmptyResearchPane></>;
+  if (tab === 'Methods') return <><Pane title="Project code"><FileInventory files={project?.files}/></Pane><EmptyResearchPane title="Execution output">{latest ? `${latest.id} is ${latest.status}. Open Methods for its durable trial record.` : 'Concise coding and test activity appears in chat while work is running. Metrics appear in Methods after a run record is created.'}</EmptyResearchPane></>;
   return <><Pane title={tab === 'Evidence' ? 'Evidence visuals' : 'Results and artifacts'}><ArtifactGallery artifacts={project?.artifacts}/></Pane><Pane title={tab === 'Evidence' ? 'Recorded metrics' : 'Experiment record'}><div className="metricsJson">{project?.latestMetrics ? <pre>{JSON.stringify(project.latestMetrics, null, 2)}</pre> : <div className="emptyResearch"><p>No metrics have been recorded. Save run metrics as <code>runs/&lt;run-id&gt;/metrics.json</code>.</p></div>}</div></Pane></>;
 }
 
@@ -981,7 +981,7 @@ function App() {
       const nextFormat = preferredWriteupFormat(project.root, project.writeups);
       setWriteupFormat(nextFormat);
       setInputs(projectDrafts.current[project.root]?.inputs || {}); setAttachments(projectDrafts.current[project.root]?.attachments || {}); setConversationError('');
-      setProjectInfo(project); setProjectPath(project.root); setRunRecords(project.runs || []); setCompileResult(null); setFigureUploadStatus(''); await Promise.all([refreshWriteup(nextFormat, true, project.root), refreshBibliography(), refreshAssistantHistory(project.root)]); setProjectDialog(false); setTab(projectDrafts.current[project.root]?.tab || 'Results');
+      setProjectInfo(project); setProjectPath(project.root); setRunRecords(project.runs || []); setCompileResult(null); setFigureUploadStatus(''); await Promise.all([refreshWriteup(nextFormat, true, project.root), refreshBibliography(), refreshAssistantHistory(project.root)]); setProjectDialog(false); setTab(projectDrafts.current[project.root]?.tab === 'Trials' ? 'Methods' : projectDrafts.current[project.root]?.tab || 'Results');
       return project;
     } catch (error) { setProjectError(error.message); }
     finally { setProjectBusy(false); setHistoryReady(true); }
@@ -1245,7 +1245,7 @@ function App() {
 
   const drafts = {...projectInfo?.writeups, ...(sourceReady && sourceIdentity.current.root === projectInfo?.root ? {[writeupFormat]: Boolean(draftText.trim())} : {})};
   const cancelTrial = async id => { setRunError(''); try { await apiRequest(`/api/runs/${id}/cancel`, {method: 'POST'}); await refreshProject(); } catch (error) { setRunError(error.message); } };
-  const left = tab === 'Write-up' ? <WriteupEditorPane editBibliography={openBibliographyEditor} initialFormat={initialWriteupFormat} setInitialFormat={saveInitialWriteupFormat} drafts={drafts} editorRef={writeupEditorRef} sourceConflict={sourceConflict.current} reloadDisk={reloadDiskSource} saveSource={() => saveSource().catch(() => {})} sourceStatus={sourceStatus} sourceSaving={sourceSaving} format={writeupFormat} setFormat={changeWriteupFormat} draftText={draftText} setDraftText={setDraftText} handleWriteupDrop={handleWriteupDrop} projectActive={Boolean(projectInfo?.root) && sourceReady} uploadStatus={figureUploadStatus}/> : ResearchLeft({Pane, tab, project: projectInfo, selectedRun, selectRun: setSelectedRunId, infrastructure: <InfrastructureSummary infrastructure={projectInfo?.infrastructure} openSettings={openInfrastructureEditor}/>});
+  const left = tab === 'Write-up' ? <WriteupEditorPane editBibliography={openBibliographyEditor} initialFormat={initialWriteupFormat} setInitialFormat={saveInitialWriteupFormat} drafts={drafts} editorRef={writeupEditorRef} sourceConflict={sourceConflict.current} reloadDisk={reloadDiskSource} saveSource={() => saveSource().catch(() => {})} sourceStatus={sourceStatus} sourceSaving={sourceSaving} format={writeupFormat} setFormat={changeWriteupFormat} draftText={draftText} setDraftText={setDraftText} handleWriteupDrop={handleWriteupDrop} projectActive={Boolean(projectInfo?.root) && sourceReady} uploadStatus={figureUploadStatus}/> : ResearchLeft({Pane, tab, project: projectInfo, selectedRun, selectRun: setSelectedRunId});
   const middle = tab === 'Write-up' ? <WriteupPreviewPane artifacts={projectInfo?.artifacts} projectRoot={projectInfo?.root} exportPdf={exportPdf} pdfBusy={pdfBusy} format={writeupFormat} exportWriteup={exportWriteup} draftText={draftText} compileResult={compileResult} compileLatex={compileLatex} bibliography={bibliography} projectActive={Boolean(projectInfo?.root)}/> : ResearchMiddle({Pane, tab, project: projectInfo, selectedRun, apiBase, cancelRun: cancelTrial, runError});
   const {recentConversations, titleCounts} = useMemo(() => {
     const items = conversations.filter(item => item.role === role), titleCounts = new Map();
