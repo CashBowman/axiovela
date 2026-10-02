@@ -5,6 +5,8 @@ import {researchInstructions} from '../server/research-context.mjs';
 test('executive brief preserves concise qualitative conclusions and essential caveats',()=>{
  const summary='The baseline is promising, but generalization remains uncertain. Validate robustness before expanding the study.';
  assert.deepEqual(executiveBrief({research:{summary},runs:[]}),{text:summary,authored:true});
+ const spaced='  '+summary+'\n';
+ assert.equal(executiveBrief({research:{summary:spaced},runs:[]}).text,spaced,'Annotation source hashes must use the complete saved string');
 });
 test('legacy numeric, long and stale briefs remain saved without stripping qualifiers',()=>{
  for(const summary of ['Accuracy reached 0.93.','Accuracy reached ninety percent.','Measured gain was １２%.','word '.repeat(61),'Results include $R^2$.']){

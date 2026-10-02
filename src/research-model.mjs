@@ -67,10 +67,11 @@ export function chatMarkdown(source, projectRoot = '') {
 // Preserve the saved brief and use neutral status copy until it is next revised.
 export function executiveBrief(project) {
   const view = researchView(project);
-  const summary = typeof project?.research?.summary === 'string' ? project.research.summary.trim() : '';
+  const source = typeof project?.research?.summary === 'string' ? project.research.summary : '';
+  const summary = source.trim();
   const quantitative = /[\p{N}%$]|\\(?:\(|\[)|\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|hundred|thousand|million|billion|percent)\b/iu;
   if (summary && summary.split(/\s+/u).length <= 60 && !quantitative.test(summary) && !view.stale)
-    return {text: summary, authored: true};
+    return {text: source, authored: true};
   const text = view.stale ? 'New results are available. Review the trial evidence before relying on the previous conclusion.'
     : view.active ? 'The study is in progress. A decision-ready conclusion is not yet available.'
     : view.completed ? 'Results are recorded. Review the trial evidence and its limitations before deciding the next step.'

@@ -88,7 +88,7 @@ try {
     .click();
   await page.getByRole("dialog").waitFor({ state: "hidden" });
   const summary =
-    "First complete sentence. Second sentence explains uncertainty.\n\nAnother paragraph contains evidence. Final sentence stays separate.";
+    "  First complete sentence. Second sentence explains uncertainty.\n\nAnother paragraph contains evidence. Final sentence stays separate.\n";
   await writeFile(
     path.join(project, "research/summary.json"),
     JSON.stringify({ summary, findings: [], limitations: [], nextSteps: [] }),
