@@ -40,6 +40,29 @@ try {
     assert.match(await runApi(options, model), /Complete/);
     assert.equal(await readFile(path.join(cwd, tool.path), 'utf8'), tool.content);
     assert.equal(round, 2);
+    const originalFixtureFetch = globalThis.fetch;
+    const edit = {path: tool.path, old_text: '# Real file', new_text: '# Focused edit'};
+    globalThis.fetch = async (...args) => {
+      const response = await originalFixtureFetch(...args);
+      const value = await response.json();
+      const replace = item => {
+        if (!item || typeof item !== 'object') return;
+        if (item.name === 'write_file') {
+          item.name = 'edit_file';
+          if ('arguments' in item) item.arguments = JSON.stringify(edit);
+          if ('input' in item) item.input = edit;
+          if ('args' in item) item.args = edit;
+        }
+        for (const child of Object.values(item)) if (typeof child === 'object') replace(child);
+      };
+      replace(value);
+      return Response.json(value);
+    };
+    round = 0;
+    await runApi({...options, prompt:'Edit the heading only.'}, model);
+    assert.equal(await readFile(path.join(cwd, tool.path), 'utf8'), tool.content.replace('# Real file', '# Focused edit'));
+    assert.equal(round, 2);
+    globalThis.fetch = originalFixtureFetch;
     if (id === 'openai-api') { assert.equal(lastRequest.reasoning.effort, 'high'); assert.ok(lastRequest.input.some(m => m.type === 'function_call_output')); }
     if (id === 'anthropic-api') assert.equal(lastRequest.output_config.effort, 'high');
     if (id === 'gemini-api') { assert.equal(lastRequest.generationConfig.thinkingConfig.thinkingLevel, 'high'); assert.ok(lastRequest.contents.some(c => c.parts.some(p => p.thoughtSignature))); }

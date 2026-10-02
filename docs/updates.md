@@ -287,3 +287,7 @@ Trash confirmation adds a project-scoped reminder to subsequent assistant prompt
 ## 0.2.16: PDF annotation focus
 
 Persistent passage highlights draw before the Leave feedback popup can receive focus. Regression checks cover immediate focus and visible highlighting while typing. Built locally; Windows is unsigned and Mac packages are ad-hoc signed without notarization.
+
+## 0.2.19: query efficiency
+
+Focused API file edits, recoverable backups and concise task delivery. See [release notes](releases/0.2.19.md).
